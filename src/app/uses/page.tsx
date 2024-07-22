@@ -60,11 +60,6 @@ export default function Uses() {
             mechanical switches and a ton of programmable keys. It's also shaped
             like a butterfly which is cool.
           </Tool>
-          <Tool title="Apple Magic Trackpad">
-            Something about all the gestures makes me feel like a wizard with
-            special powers. I really like feeling like a wizard with special
-            powers.
-          </Tool>
           <Tool title="Kensington Expert Mouse Trackball">
             I've been using a trackball for years and I'm never going back. I
             love the Expert Mouse because it has a scroll ring which is super
