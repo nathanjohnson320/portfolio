@@ -1,0 +1,67 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+
+export const article = {
+  author: 'Nathan Johnson',
+  date: '2024-07-01',
+  title: 'When Elixir Makes Sense',
+  description:
+    "Elixir is a powerful language, but it's not always the right choice for every project. Here are some situations where Elixir really shines and some where it might not be the best fit.",
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+Most people don't know this and you can't really tell from my github, but I've
+been writing Elixir code for over 10 years now. I know, I know, I don't look a
+day over 25, but it's true. I was writing Elixir code before it was cool, before
+it was even version 1.0.
+
+My first professional elixir app was a E2E testing platform
+built on top of webdriver and phoenix back in 2017. It was a great experience and I learned a
+lot about the language and the ecosystem. But working in a silo like that, I
+didn't get to see how Elixir would work in a larger team or on a larger project.
+
+Fast forward a couple years and I joined a team building a large Elixir app at Sprout. This
+was an ERP system that had a lot of moving parts and a lot of complexity. I was
+really impressed with how well Elixir held up in this context. The code was easy
+to read, easy to reason about, and easy to test. The performance was great, and
+the reliability was top notch. I got to work with the maintainer of dialyxir and
+learned a lot about the deep parts of elixir from him. However, I also saw some
+of the downsides of Elixir in this context. The compile times were slow, the
+tooling was lacking, and the ecosystem was still maturing.
+
+Two years later, I joined a team building elixir microservices at STORD. This
+was a great experience because I got to see how Elixir worked in a microservices
+architecture. I learned a lot about how to build resilient systems with Elixir
+and how to deploy them to production. I also got to see how Elixir worked in a
+team setting, with multiple developers working on the same codebase. After a few years
+there I can say that elixir is not a great choice when it comes to microservices
+architecture. The language is great, but the ecosystem is not mature enough to
+support microservices without a reasonable amount of effort.
+
+We have about 20 microservices in production and they are all written in elixir and were
+maintained by separate teams. The biggest problem we faced was the lack of
+tooling and the lack of best practices. We had to build a lot of tooling
+ourselves and we had to come up with our own best practices. This was a lot of
+work and it slowed us down a lot. The dev teams were constantly fighting with
+each other over how to structure the code, how to test the code, and how to
+deploy the code. This was a big problem and it made it hard to move fast. It was also extremely
+difficult to onboard new developers because the learning curve was so steep. We
+had to spend a lot of time training new developers and getting them up to speed. If you look at
+a language like Go, you can see that it has a lot of best practices and a lot of
+tooling built in. This makes it easy to onboard new developers and it makes it
+easy to move fast. Elixir is not there yet but I think it will get there in the
+future.
+
+So, when does Elixir make sense? I think Elixir makes sense when you have a
+small team working on a large monolith. Elixir is great for building large
+monoliths because the code is easy to read, easy to reason about, and easy to
+test. The performance is great, the reliability is top notch, and as a standalone
+service it is easy to deploy.
+
+It's not a great choice for microservices architecture, due to the lack of
+tooling and best practices but eventually it will get there.
