@@ -1,0 +1,195 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import terminal from '@/images/articles/10-01-20-building-a-terminal-internet-radio-player/epic-rock-screen.png'
+import headers from '@/images/articles/10-01-20-building-a-terminal-internet-radio-player/epic-rock-headers.png'
+
+export const article = {
+  author: 'Nathan Johnson',
+  date: '2020-10-01',
+  title: 'Building a Terminal Internet Radio Player',
+  description:
+    'Leveraging ink.js and various media libraries you can play internet radio via your terminal!',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+One of my friends came to me with a problem, he wanted to listen to epic rock radio but all the players he used killed his computer due to CPU/RAM usage. So for whatever reason I thought it would make sense to write a terminal player for epic rock radio. This is the result.
+
+<Image src={terminal} alt="UI of the radio player in the terminal" />
+
+## Starting out
+
+To start I needed to figure out how internet radio even works. Step 1 was inspecting the HTTP request for their web player.
+
+<Image
+  src={headers}
+  alt="Headers in the chrome devtools of a request to epic rock radio"
+/>
+
+In the response headers I noticed something called shoutcast and on a quick google I found that shoutcast uses icecast headers for metadata about the audio tracks playing. The body of the response is the audio stream that is encoded as mp3. The headers also tell you what the bitrate and sample rate should be. There were a few icecast parsers so I just went with the simplest one `icecast-parser`. With that package you can get metadata for the station when it changes as long as you pass `notifyOnChangeOnly: true`.
+
+```javascript
+import { Parser } from 'icecast-parser'
+import query from 'querystring'
+
+const url = 'http://jenny.torontocast.com:8064/stream'
+const radioStation = new Parser({ url, notifyOnChangeOnly: true })
+radioStation.on('metadata', (metadata) => {
+  let params = query.decode(metadata.get('StreamUrl'))
+  console.log(params)
+})
+```
+
+## Playing the audio
+
+icecast-parser also returns the stream but I had an awful time getting that to play properly so I used http instead. Now I couldn't find a good node library to play raw mp3 streams but I did manage to find one for wav (in the `speaker` package). The problem with that is that you can't just pipe an mp3 into wav because it's encoded as MP3! So I had to find or write something that would do this for me. Luckily the node lame package does this but it doesn't work with newer node versions so I had to use a fork with `@suldashi/lame`. Using the bitrate and samplerate from the headers you can initialize you speaker pipeline and then build a pipeline of http -> mp3 to wav decoder -> speaker which will play the audio for you.
+
+```javascript
+import http from 'http'
+import Speaker from 'speaker'
+import lame from '@suldashi/lame'
+import wav from 'wav'
+
+const speaker = new Speaker({
+  channels: 2,
+  bitDepth: 16,
+  sampleRate: 44100,
+})
+
+const decoder = new lame.Decoder()
+decoder.on('format', (format) => {
+  const writer = new wav.Writer(format)
+  decoder.pipe(writer).pipe(speaker)
+})
+
+http.get(url, (res) => {
+  res.pipe(decoder)
+})
+```
+
+So at this point I had the metadata and a raw wav stream playing but there wasn't any UI around it. At twilio signal they built a CLI tool for their conference using ink ([blog article here](https://www.twilio.com/blog/building-conference-cli-in-react)) and that seemed cool so I went ahead and pulled that in.
+
+## The TUI (Terminal UI)
+
+Ink uses react which is interesting for a terminal application, especially a node.js application, because normally you have a bunch of build processes setup to webpack/rollup/parcel the bundle to work properly. I went with vanilla babel because I didn't want to spend more than 45 minutes on the app. I had to write my own image component because the one that is in the inkjs docs throws an error on its latest version but the gist is below
+
+```javascript
+import React, { useState, useEffect } from 'react'
+import { render, useInput, Box, Text, Newline } from 'ink'
+import BigText from 'ink-big-text'
+import Divider from 'ink-divider'
+import Image from './image.dist'
+
+const UI = () => {
+  const [meta, setMeta] = useState({})
+
+  useEffect(() => {
+    radioStation.on('metadata', (metadata) => {
+      let params = query.decode(metadata.get('StreamUrl'))
+      setMeta(params)
+    })
+
+    http.get(url, (res) => {
+      res.pipe(decoder)
+    })
+
+    decoder.on('format', (format) => {
+      const writer = new wav.Writer(format)
+      decoder.pipe(writer).pipe(speaker)
+    })
+
+    return () => {}
+  }, [])
+
+  return (
+    <Box flexDirection="column">
+      <Box justifyContent="center">
+        <BigText text="Epic Rock Radio" />
+      </Box>
+
+      <Box flexDirection="row" justifyContent="center">
+        <Box
+          borderStyle="bold"
+          width="20%"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Image width="40%" src={meta.picture}></Image>
+        </Box>
+
+        <Box
+          borderStyle="bold"
+          width="80%"
+          flexDirection="column"
+          justifyContent="center"
+          padding={1}
+        >
+          <Divider title="Now Playing"></Divider>
+          <Newline></Newline>
+          <Text bold>{meta.title}</Text>
+          <Text>
+            {meta.artist} - {meta.album}
+          </Text>
+          <Newline></Newline>
+
+          <Divider title="Controls"></Divider>
+          <Newline></Newline>
+          <Text>(q) Quit</Text>
+        </Box>
+      </Box>
+    </Box>
+  )
+}
+
+render(<UI />)
+```
+
+```javascript
+import React, { useState, useEffect } from 'react'
+import { Box, Text } from 'ink'
+import terminalImage from 'terminal-image'
+import got from 'got'
+
+const Image = (props) => {
+  const [imageData, setImageData] = useState('')
+
+  useEffect(() => {
+    ;(async () => {
+      if (!props.src) return
+      const body = await got(
+        `http://www.kaidata.com/pictures/${props.src}`,
+      ).buffer()
+      const response = await terminalImage.buffer(body, {
+        preserveAspectRatio: true,
+        width: props.width,
+        height: props.width,
+      })
+      setImageData(response)
+    })()
+
+    return () => {}
+  }, [props.src])
+
+  return (
+    <Box>
+      <Text>{imageData}</Text>
+    </Box>
+  )
+}
+
+module.exports = Image
+```
+
+Every time the metadata is retrieved it re-renders the terminal UI with new album info and an image. I also added some user controls which you can browse in the source codes.
+
+## Links Links Links
+
+- [ink](https://github.com/vadimdemedes/ink)
+- [speaker](https://www.npmjs.com/package/speaker)
+- [icecast-parser](https://www.npmjs.com/package/icecast-parser)
+- [source code](https://github.com/nathanjohnson320/epic_rock_radio)
+- [npm package](https://www.npmjs.com/package/epic_rock_radio)

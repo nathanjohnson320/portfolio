@@ -1,0 +1,282 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+
+export const article = {
+  author: 'Nathan Johnson',
+  date: '2022-12-20',
+  title: 'Deploy Elixir Phoenix App with Heroku Containers',
+  description:
+    'Step by step guide for taking a mix phx.new app and turning it into a dockerized mix release app.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+Recently got a phoenix app running with heroku containers so I thought it would be helpful to others to see how it works. I'll be using a dummy app called `bob_ross` which just links out to a bunch of existing Bob Ross youtube videos.
+_NOTE: this is using elixir 1.11 so might not work with your version_
+
+## Configs
+
+### Dockerfiles and What Not
+
+The first step is getting your Dockerfile ready to deploy. Thankfully the folks over at google posted a [nice sample](https://cloud.google.com/community/tutorials/elixir-phoenix-on-kubernetes-google-container-engine#dockerizing_your_application) dockerfile that can be easily moulded to work with heroku. Using this as a base we can easily modify it to work for heroku.
+
+Step 1 is to change the build step to use a specific version. You rarely want to use the latest tag on any Dockerfile because updated things might break your code.
+
+```docker
+FROM elixir:1.11-alpine
+```
+
+Now we want to update the build step because phoenix already includes a deploy command:
+
+```docker
+RUN cd ${phoenix_subdir}/assets \
+  && npm install \
+  && npm run deploy \ # Line changed from raw webpack
+  && cd .. \
+  && mix phx.digest
+```
+
+The last part is to drop all the gcloud specific code in the runtime container and add a user. You'll want to add your own user because by default docker uses root which can raise security issues.
+
+```docker
+# Only set this env var
+ENV REPLACE_OS_VARS=true
+
+# For local dev, heroku will ignore this
+EXPOSE $PORT
+
+WORKDIR /opt/app
+COPY --from=0 /opt/release .
+RUN addgroup -S elixir && adduser -H -D -S -G elixir elixir
+RUN chown -R elixir:elixir /opt/app
+USER elixir
+
+# Heroku sets magical $PORT variable so we need to pass it to our app's start
+CMD PORT=$PORT exec /opt/app/bin/start_server start
+```
+
+You should be left with a dockerfile that looks something like this (make sure you change the app_name arg from bob_ross to your app)
+
+```docker
+# https://cloud.google.com/community/tutorials/elixir-phoenix-on-kubernetes-google-container-engine
+# Build time container
+FROM elixir:1.11-alpine
+
+ARG app_name=bob_ross
+ARG phoenix_subdir=.
+ARG build_env=prod
+ENV MIX_ENV=${build_env} TERM=xterm
+
+RUN apk update \
+  && apk --no-cache --update add nodejs nodejs-npm \
+  && mix local.rebar --force \
+  && mix local.hex --force
+
+RUN mkdir /app
+COPY . /app
+WORKDIR /app
+
+RUN mix do deps.get, compile
+RUN cd ${phoenix_subdir}/assets \
+  && npm install \
+  && npm run deploy \
+  && cd .. \
+  && mix phx.digest
+RUN mix release ${app_name} \
+  && mv _build/${build_env}/rel/${app_name} /opt/release \
+  && mv /opt/release/bin/${app_name} /opt/release/bin/start_server
+
+# Runtime container
+FROM alpine:latest
+RUN apk update \
+  && apk --no-cache --update add bash ca-certificates openssl-dev \
+  && mkdir -p /usr/local/bin
+
+ENV REPLACE_OS_VARS=true
+
+# For local dev, heroku will ignore this
+EXPOSE $PORT
+
+WORKDIR /opt/app
+COPY --from=0 /opt/release .
+RUN addgroup -S elixir && adduser -H -D -S -G elixir elixir
+RUN chown -R elixir:elixir /opt/app
+USER elixir
+
+# Heroku sets magical $PORT variable
+CMD PORT=$PORT exec /opt/app/bin/start_server start
+```
+
+I also used this .dockerignore so the builds were faster and didn't have unnecessary files in them
+
+```
+/_build/
+/assets/node_modules/
+/deps/
+/doc/
+/priv/static/
+/test/
+/tmp/
+.dockerignore
+Dockerfile
+```
+
+With that dockerfile you could try to deploy but it won't work because there's other code changes you need to make.
+
+### Config Changes
+
+If you're coming from a slightly older elixir version you'll need to update how you pull in Config since it will error out in releases.
+
+Start by changing references of `use Mix.Config` to `import Config` in all your configuration files. The former way of instantiating configs is deprecated now.
+
+Next, you'll want to rename you `prod.secret.exs` file to `releases.exs`. You'll also need to remove the last line of `prod.exs` that imports the secret config. While you're in the `prod.exs` update your Endpoint configuration and strip out the line `  url: [host: "example.com", port: 80],`. We can do this in our releases.exs so it pulls from the environment variables properly
+
+In `releases.exs` we'll want to change a couple things. First if you haven't already uncomment the `ssl: true` line under the Repo config if you're using heroku postgres so it will work properly. Now change the Endpoint configuration to the following (using your app name, not BobRoss again):
+
+```elixir
+config :bob_ross, BobRossWeb.Endpoint,
+  url: [host: "bobrs.herokuapp.com", port: String.to_integer(System.fetch_env!("PORT"))],
+  check_origin: ["//bobrs.herokuapp.com"],
+  http: [
+    port: String.to_integer(System.fetch_env!("PORT")),
+    transport_options: [socket_opts: []]
+  ],
+  server: true,
+  code_reloader: false,
+  secret_key_base: secret_key_base
+```
+
+One notable thing that I had to do here was empty the socket_opts list. Whenever I passed the default `:inet6` it would throw weird exceptions. Also make sure that any references to "PORT" throw errors if it isn't set. Your app will fail to boot and it's easier to diagnose if it raises.
+
+You'll also need to make sure you put any static endpoint configuration in prod.exs. Otherwise, you'll get weird exceptions like `** (ArgumentError) expected these options to be unchanged from compile time: [:force_ssl]`
+
+The last configuration change I had to make was in `mix.exs`. You'll need to add a releases list with your app so `mix release {app_name}` works.
+
+So inside mix.exs in the `project` function we need to add:
+
+```elixir
+releases: [
+   bob_ross: [
+     include_executables_for: [:unix],
+     applications: [runtime_tools: :permanent]
+   ]
+ ]
+```
+
+Make sure the key in the list i.e. "bob_ross:" matches your app name otherwise you'll get an error that it's not a release. The valid arguments you can pass to it can be found in the [hexdocs for mix release](https://hexdocs.pm/mix/Mix.Tasks.Release.html#module-options)
+
+My full mix.exs project function looks like this
+
+```elixir
+defmodule BobRoss.MixProject do
+  use Mix.Project
+
+  def project do
+    [
+      app: :bob_ross,
+      version: "0.1.0",
+      elixir: "~> 1.7",
+      elixirc_paths: elixirc_paths(Mix.env()),
+      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      start_permanent: Mix.env() == :prod,
+      aliases: aliases(),
+      deps: deps(),
+      releases: [
+        bob_ross: [
+          include_executables_for: [:unix],
+          applications: [runtime_tools: :permanent]
+        ]
+      ]
+    ]
+  end
+
+  # Rest omitted
+  ...
+end
+```
+
+### Heroku Application config
+
+On heroku you'll need to add your `SECRET_KEY_BASE` variable under settings or via CLI so the app doesn't crash (`mix phx.gen.secret`) and also add a postgres DB if you're using that so you get the DATABASE_URL variable.
+
+## Deployment
+
+### CLI Commands
+
+Once you have the dockerfile and config changes done you can run the app locally to see if it starts up. Make sure you have the environment variables set ($DATABASE_URL, $SECRET_KEY_BASE)
+
+```bash
+$ docker build -t <your app> .
+$ docker run -p 4000:4000 -e POOL_SIZE=2 -e PORT=4000 -e DATABASE_URL=$DATABASE_URL -e SECRET_KEY_BASE=$SECRET_KEY_BASE <your app>
+```
+
+And if that goes well (app loads on localhost:4000) you can deploy it to heroku with their cli. Note that you will need to login to their container service before pushing `heroku container:login`
+
+```bash
+heroku container:push web -a <your app>
+heroku container:release web -a <your app>
+```
+
+## Running Migrations and Seeds
+
+This isn't directly related to deployment but if you need to run a one off task via the cli on heroku it is not as easy with mix releases.
+
+First you'll need to wrap your commands in a mix task or module that can be run through eval. For example this is my `release.ex` file
+
+```elixir
+defmodule BobRoss.Release do
+  @app :bob_ross
+
+  @doc """
+  bin/start_server eval 'BobRoss.Release.migrate()'
+  """
+  def migrate do
+    for repo <- repos() do
+      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
+    end
+  end
+
+  @doc """
+  bin/start_server eval 'BobRoss.Release.rollback(repo, version)'
+  """
+  def rollback(repo, version) do
+    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
+  end
+
+  @doc """
+  bin/start_server eval 'BobRoss.Release.seed()'
+  """
+  def seed() do
+    filename = Application.app_dir(:bob_ross, "priv/repo/seeds.exs")
+
+    for repo <- repos() do
+      {:ok, _, _} =
+        Ecto.Migrator.with_repo(repo, fn _repo ->
+          if File.regular?(filename) do
+            {:ok, Code.eval_file(filename)}
+          else
+            {:error, "Seeds file not found."}
+          end
+        end)
+    end
+  end
+
+  defp start_minimal() do
+    Application.ensure_all_started(:ssl)
+    Application.load(@app)
+  end
+
+  defp repos do
+    start_minimal()
+    Application.fetch_env!(@app, :ecto_repos)
+  end
+end
+```
+
+That will let me run `heroku run bash` or I could run these commands directly `heroku run "bin/start_server eval 'BobRoss.Release.migrate()'"` and that would run the migrations on my dyno.
+
+I think that's everything I had to do if there's any typos or misconfiguration let me know!

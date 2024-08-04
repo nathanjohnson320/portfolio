@@ -1,0 +1,204 @@
+import { ArticleLayout } from '@/components/ArticleLayout'
+import remixSetup from '@/images/articles/01-18-22-remixrun-cloudflare-workers-supabase-tailwind/remix-setup.png'
+import remixStarterTailwind from '@/images/articles/01-18-22-remixrun-cloudflare-workers-supabase-tailwind/remix-starter-tailwind.png'
+import remixStarter from '@/images/articles/01-18-22-remixrun-cloudflare-workers-supabase-tailwind/remix-starter.png'
+
+export const article = {
+  author: 'Nathan Johnson',
+  date: '2022-01-18',
+  title: 'remix.run + cloudflare workers + supabase + tailwind',
+  description:
+    'A quick guide on how to use remix.run with cloudflare workers, supabase, and tailwindcss.',
+}
+
+export const metadata = {
+  title: article.title,
+  description: article.description,
+}
+
+export default (props) => <ArticleLayout article={article} {...props} />
+
+## Setup
+
+_Miniflare will only work with node >=16.7 so make sure you have a compatible node version installed before this_
+
+Start up the create-remix cli
+
+```
+npx create-remix@latest
+```
+
+Select Cloudflare Workers
+
+<Image src={remixSetup} alt="remix cli selecting cloudflare workers" />
+
+You can use typescript or javascript. For this I'm using typescript.
+
+Add concurrently to build the css, worker, and remix dev at the same time. Also at dotenv for environment variable injection locally (don't commit your .env). You also need to add the serve package because it doesn't get added by the create script for some reason.
+
+```
+npm install --save-dev concurrently dotenv @remix-run/serve
+```
+
+Update the dev script to concurrently build and run the worker locally
+
+```
+"dev": "concurrently \"node -r dotenv/config node_modules/.bin/remix dev\" \"npm run start\"",
+```
+
+Now if you run `yarn dev` or `npm run dev` it should start your app on localhost:8787
+
+<Image src={remixStarter} alt="local remix starter page" />
+
+## Tailwind
+
+Install dependencies
+
+```
+npm install --save @headlessui/react @heroicons/react @tailwindcss/forms tailwindcss
+```
+
+Add a build command for the css to package.json "scripts"
+
+```
+"dev:css": "tailwindcss -i ./styles/tailwind.css -o ./app/tailwind.css --watch",
+```
+
+Update the "dev" script in package.json to concurrently build the css, remix, and worker
+
+```
+"dev": "concurrently \"npm run dev:css\" \"node -r dotenv/config node_modules/.bin/remix dev\" \"npm run start\"",
+```
+
+Add tailwind.config.js to the root of your app
+
+```javascript
+module.exports = {
+  content: ['./app/**/*.{ts,tsx}'],
+  theme: {
+    extend: {},
+  },
+  plugins: [require('@tailwindcss/forms')],
+}
+```
+
+Create a styles directory with the base tailwind css in it so the dev:css command will process it
+
+```css
+/* styles/tailwind.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+```
+
+Now in the app/root.tsx we need to import and use the styles
+
+```typescript
+import styles from './tailwind.css'
+
+export function links() {
+  return [
+    // This is optional but is how to add a google font
+    {
+      rel: 'stylesheet',
+      href: 'https://fonts.googleapis.com/css?family=Open+Sans',
+    },
+    { rel: 'stylesheet', href: styles },
+  ]
+}
+```
+
+In the root.tsx if we wrap the `<Outlet />` in some tailwind styles it should display properly
+
+```
+<div className="relative bg-white overflow-hidden">
+  <div className="mt-4">
+    <Outlet />
+   </div>
+</div>
+```
+
+<Image src={remixStarterTailwind} alt="remix home after adding tailwind" />
+
+## Supabase
+
+I won't go into much of the details on this but the below setup should get your cloudflare worker running with supabase. The main issues I ran into are that cloudflare workers don't have XMLHTTPRequest defined so you have to bind a fetch variable. Also the environment variables are globals not the usual `process.env.<VAR_NAME>`.
+
+Step one is to install supabase
+
+```
+npm install --save @supabase/supabase-js
+```
+
+Then add your supabase url and anon key to cloudflare secrets with wrangler. You can add them to your .env locally and they will get injected the same way.
+
+```
+wrangler secret put SUPABASE_URL
+...enter the url
+
+wrangler secret put SUPABASE_ANON_KEY
+...enter the key
+```
+
+Now we need to create a client that will use the right environment variables and fetch to work.
+
+```typescript
+// app/db.ts
+import { createClient } from '@supabase/supabase-js'
+
+export const supabase = () => {
+  // Globals are from cloudflare secrets
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    fetch: fetch.bind(globalThis),
+  })
+}
+```
+
+To fix the typescript errors on the SUPABASE_URL and SUPABASE_ANON_KEY environment variables you'll need to make a bindings.d.ts as mentioned here: https://github.com/cloudflare/workers-types#using-bindings
+
+```typescript
+export {}
+
+declare global {
+  const SUPABASE_ANON_KEY: string
+  const SUPABASE_URL: string
+}
+```
+
+With that in place you can use it in your type files i.e.
+
+```typescript
+// app/series.ts
+import { Season } from './season'
+import { supabase } from './db'
+
+export type Series = {
+  index: number
+  title: string
+  seasons: Season[]
+}
+
+export async function listSeries(): Promise<Series[]> {
+  const { data } = await supabase().from('series').select(`
+  index,
+  title,
+  seasons (
+    index
+  )
+`)
+
+  return data as Series[]
+}
+```
+
+And in your loader
+
+```typescript
+export const loader: LoaderFunction = async ({ params }) => {
+  const series = await listSeries()
+
+  return {
+    series,
+  }
+}
+```
