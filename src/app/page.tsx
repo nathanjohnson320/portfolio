@@ -251,8 +251,8 @@ export default async function Home() {
             Software engineer, entrepreneur, and professional artist.
           </h1>
           <p className="mt-6 text-base text-zinc-600 dark:text-zinc-400">
-            I'm Nathan, a software engineer and oil painter based in North
-            Carolina. I'm currently working with STORD building out the cloud
+            I'm Nathan, a software engineer and oil painter based in Tallinn
+            Estonia. I'm currently working with STORD building out the cloud
             supply chain and oil painting on my YouTube channel in my free time.
           </p>
           <div className="mt-6 flex gap-6">
