@@ -12,7 +12,7 @@ export const metadata: Metadata = {
       'Nathan Johnson - Senior Software Engineer, entrepreneur, and professional artist',
   },
   description:
-    "I'm Nathan, a software engineer and artist based in North Carolina. I'm currently working with STORD building out the cloud supply chain and oil painting on my YouTube channel in my free time.",
+    "I'm Nathan, a software engineer and artist based in Tallinn Estonia. I'm currently working with STORD building out the cloud supply chain and oil painting on my YouTube channel in my free time.",
   alternates: {
     types: {
       'application/rss+xml': `${process.env.NEXT_PUBLIC_SITE_URL}/feed.xml`,
