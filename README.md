@@ -1,17 +1,21 @@
-# My Portfolio + Blog
+# Portfolio + Blog
 
-This is my portfolio + blog built using [Tailwind CSS](https://tailwindcss.com) and [Next.js](https://nextjs.org).
+Static site built with [Gleam](https://gleam.run) and [Lustre SSG](https://github.com/lustre-labs/ssg), deployed to Cloudflare Pages.
 
 ## Getting started
 
 ```bash
-npm install
+gleam deps download
+gleam run -m build
+gleam run -m dev
 ```
 
-Run the development server:
+Open [http://localhost:8999](http://localhost:8999).
+
+## Deploy
 
 ```bash
-npm run dev
+gleam run -m build
+npm install
+npm run deploy
 ```
-
-Finally, open [http://localhost:3000](http://localhost:3000) in your browser to view the website.

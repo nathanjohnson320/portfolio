@@ -1,2 +1,7 @@
+*.beam
+*.ez
+/build
+erl_crash.dump
 node_modules
-.next
+/public
+.DS_Store
