@@ -16,7 +16,7 @@ npx create-remix@latest
 
 Select Cloudflare Workers
 
-![remix cli selecting cloudflare workers](/img/articles/01-18-22-remixrun-cloudflare-workers-supabase-tailwind/remix-setup.png)
+![remix cli selecting cloudflare workers](/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-setup.png)
 
 You can use typescript or javascript. For this I'm using typescript.
 
@@ -34,7 +34,7 @@ Update the dev script to concurrently build and run the worker locally
 
 Now if you run `yarn dev` or `npm run dev` it should start your app on localhost:8787
 
-![local remix starter page](/img/articles/01-18-22-remixrun-cloudflare-workers-supabase-tailwind/remix-starter.png)
+![local remix starter page](/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-starter.png)
 
 ## Tailwind
 
@@ -104,7 +104,7 @@ In the root.tsx if we wrap the `<Outlet />` in some tailwind styles it should di
 </div>
 ```
 
-![remix home after adding tailwind](/img/articles/01-18-22-remixrun-cloudflare-workers-supabase-tailwind/remix-starter-tailwind.png)
+![remix home after adding tailwind](/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-starter-tailwind.png)
 
 ## Supabase
 

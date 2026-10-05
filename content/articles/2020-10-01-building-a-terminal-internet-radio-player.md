@@ -6,13 +6,13 @@ description = "Leveraging ink.js and various media libraries you can play intern
 
 One of my friends came to me with a problem, he wanted to listen to epic rock radio but all the players he used killed his computer due to CPU/RAM usage. So for whatever reason I thought it would make sense to write a terminal player for epic rock radio. This is the result.
 
-![UI of the radio player in the terminal](/img/articles/10-01-20-building-a-terminal-internet-radio-player/epic-rock-screen.png)
+![UI of the radio player in the terminal](/img/articles/2020-10-01-building-a-terminal-internet-radio-player/epic-rock-screen.png)
 
 ## Starting out
 
 To start I needed to figure out how internet radio even works. Step 1 was inspecting the HTTP request for their web player.
 
-![Headers in the chrome devtools of a request to epic rock radio](/img/articles/10-01-20-building-a-terminal-internet-radio-player/epic-rock-headers.png)
+![Headers in the chrome devtools of a request to epic rock radio](/img/articles/2020-10-01-building-a-terminal-internet-radio-player/epic-rock-headers.png)
 
 In the response headers I noticed something called shoutcast and on a quick google I found that shoutcast uses icecast headers for metadata about the audio tracks playing. The body of the response is the audio stream that is encoded as mp3. The headers also tell you what the bitrate and sample rate should be. There were a few icecast parsers so I just went with the simplest one `icecast-parser`. With that package you can get metadata for the station when it changes as long as you pass `notifyOnChangeOnly: true`.
 

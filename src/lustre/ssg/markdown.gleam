@@ -50,7 +50,9 @@ pub fn frontmatter(document: String) -> Result(String, Nil) {
 ///
 /// If the frontmatter is invalid TOML, this function returns a TOML parse error.
 ///
-pub fn metadata(document: String) -> Result(Dict(String, Toml), tom.ParseError) {
+pub fn metadata(
+  document: String,
+) -> Result(Dict(String, Toml), tom.ParseError) {
   case frontmatter(document) {
     Ok(frontmatter) -> tom.parse(frontmatter)
     Error(_) -> Ok(dict.new())

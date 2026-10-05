@@ -23,6 +23,10 @@ pub fn page(articles: List(Article)) -> Element(msg) {
           ),
         ]),
         ul([class("social-links")], [
+          social(
+            "https://bsky.app/profile/nathanjohnson320.bsky.social",
+            "Bluesky",
+          ),
           social("https://www.instagram.com/paint.by.nate/", "Instagram"),
           social("https://github.com/nathanjohnson320", "GitHub"),
           social(

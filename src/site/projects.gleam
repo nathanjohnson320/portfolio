@@ -17,11 +17,18 @@ type Project {
 pub fn page() -> Element(msg) {
   let projects = [
     Project(
-      "My Art Store",
-      "A simple e-commerce website that sells art prints and paintings.",
-      "https://shop.paintbynate.art",
-      "shop.paintbynate.art",
-      "/img/logos/shop-logo.jpg",
+      "GleamHub",
+      "Github but written in Gleam, for all those times Github is down.",
+      "https://github.com/nathanjohnson320/gleamhub",
+      "github.com",
+      "/img/logos/gleam-logo.png",
+    ),
+    Project(
+      "AtomVM Gleam",
+      "AtomVM implementation using the Gleam programming language, for use on the AtomVM virtual machine.",
+      "https://github.com/nathanjohnson320/atomvm_gleam",
+      "github.com",
+      "/img/logos/gleam-logo.png",
     ),
     Project(
       "html-to-lustre",
