@@ -1,34 +1,44 @@
-import lustre/attribute.{class, href, rel}
-import lustre/element.{type Element, fragment, text}
+import lustre/attribute.{charset, class, content, href, name, rel}
+import lustre/element.{type Element, text}
 import lustre/element/html.{
-  a, div, footer, h1, header, li, link, main, nav, p, title, ul,
+  a, body, div, footer, h1, head, header, html, li, link, main, meta, nav, p,
+  title, ul,
 }
 
 /// Shared page chrome: stylesheet, site header, footer.
-pub fn layout(page_title: String, content: Element(msg)) -> Element(msg) {
-  fragment([
-    link([rel("stylesheet"), href("/styles.css")]),
-    link([rel("icon"), href("/favicon.ico")]),
-    title([], format_title(page_title)),
-    header([class("site-header")], [
-      div([class("container header-inner")], [
-        a([href("/"), class("site-brand")], [text("Nathan Johnson")]),
-        nav([class("site-nav")], [
-          ul([], [
-            nav_item("/about", "About"),
-            nav_item("/articles", "Articles"),
-            nav_item("/projects", "Projects"),
-            nav_item("/uses", "Uses"),
+pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
+  html([], [
+    head([], [
+      meta([charset("utf-8")]),
+      meta([
+        name("viewport"),
+        content("width=device-width, initial-scale=1"),
+      ]),
+      link([rel("stylesheet"), href("/styles.css")]),
+      link([rel("icon"), href("/favicon.ico")]),
+      title([], format_title(page_title)),
+    ]),
+    body([], [
+      header([class("site-header")], [
+        div([class("container header-inner")], [
+          a([href("/"), class("site-brand")], [text("Nathan Johnson")]),
+          nav([class("site-nav")], [
+            ul([], [
+              nav_item("/about", "About"),
+              nav_item("/articles", "Articles"),
+              nav_item("/projects", "Projects"),
+              nav_item("/uses", "Uses"),
+            ]),
           ]),
         ]),
       ]),
-    ]),
-    main([class("site-main")], [div([class("container")], [content])]),
-    footer([class("site-footer")], [
-      div([class("container")], [
-        p([], [
-          text("© Nathan Johnson. "),
-          a([href("/")], [text("Home")]),
+      main([class("site-main")], [div([class("container")], [page])]),
+      footer([class("site-footer")], [
+        div([class("container")], [
+          p([], [
+            text("© Nathan Johnson. "),
+            a([href("/")], [text("Home")]),
+          ]),
         ]),
       ]),
     ]),
