@@ -9,6 +9,12 @@
   "assets": {
     "directory": "./public"
   },
+  "routes": [
+    {
+      "pattern": "career.paintbynate.art",
+      "custom_domain": true
+    }
+  ],
   "observability": {
     "enabled": true
   },
