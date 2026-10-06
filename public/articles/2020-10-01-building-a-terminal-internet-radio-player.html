@@ -1,0 +1,132 @@
+<!doctype html>
+<!-- lustre:map --><html><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1" name="viewport"><link href="/styles.css" rel="stylesheet"><link href="/favicon.ico" rel="icon"><title>Building a Terminal Internet Radio Player — Nathan Johnson</title></head><body><header class="site-header"><div class="container header-inner"><a class="site-brand" href="/">Nathan Johnson</a><nav class="site-nav"><ul><li><a href="/about">About</a></li><li><a href="/articles">Articles</a></li><li><a href="/projects">Projects</a></li><li><a href="/uses">Uses</a></li></ul></nav></div></header><main class="site-main"><div class="container"><article class="prose"><p class="back"><a href="/articles">← Articles</a></p><h1>Building a Terminal Internet Radio Player</h1><time>October 1, 2020</time><div class="article-body"><p>One of my friends came to me with a problem, he wanted to listen to epic rock radio but all the players he used killed his computer due to CPU/RAM usage. So for whatever reason I thought it would make sense to write a terminal player for epic rock radio. This is the result.</p><p><img alt="UI of the radio player in the terminal" src="/img/articles/2020-10-01-building-a-terminal-internet-radio-player/epic-rock-screen.png"></p><h2>Starting out</h2><p>To start I needed to figure out how internet radio even works. Step 1 was inspecting the HTTP request for their web player.</p><p><img alt="Headers in the chrome devtools of a request to epic rock radio" src="/img/articles/2020-10-01-building-a-terminal-internet-radio-player/epic-rock-headers.png"></p><p>In the response headers I noticed something called shoutcast and on a quick google I found that shoutcast uses icecast headers for metadata about the audio tracks playing. The body of the response is the audio stream that is encoded as mp3. The headers also tell you what the bitrate and sample rate should be. There were a few icecast parsers so I just went with the simplest one <code>icecast-parser</code>. With that package you can get metadata for the station when it changes as long as you pass <code>notifyOnChangeOnly: true</code>.</p><pre><code class="language-javascript">import { Parser } from &#39;icecast-parser&#39;
+import query from &#39;querystring&#39;
+
+const url = &#39;http://jenny.torontocast.com:8064/stream&#39;
+const radioStation = new Parser({ url, notifyOnChangeOnly: true })
+radioStation.on(&#39;metadata&#39;, (metadata) =&gt; {
+  let params = query.decode(metadata.get(&#39;StreamUrl&#39;))
+  console.log(params)
+})
+</code></pre><h2>Playing the audio</h2><p>icecast-parser also returns the stream but I had an awful time getting that to play properly so I used http instead. Now I couldn&#39;t find a good node library to play raw mp3 streams but I did manage to find one for wav (in the <code>speaker</code> package). The problem with that is that you can&#39;t just pipe an mp3 into wav because it&#39;s encoded as MP3! So I had to find or write something that would do this for me. Luckily the node lame package does this but it doesn&#39;t work with newer node versions so I had to use a fork with <code>@suldashi/lame</code>. Using the bitrate and samplerate from the headers you can initialize you speaker pipeline and then build a pipeline of http -&gt; mp3 to wav decoder -&gt; speaker which will play the audio for you.</p><pre><code class="language-javascript">import http from &#39;http&#39;
+import Speaker from &#39;speaker&#39;
+import lame from &#39;@suldashi/lame&#39;
+import wav from &#39;wav&#39;
+
+const speaker = new Speaker({
+  channels: 2,
+  bitDepth: 16,
+  sampleRate: 44100,
+})
+
+const decoder = new lame.Decoder()
+decoder.on(&#39;format&#39;, (format) =&gt; {
+  const writer = new wav.Writer(format)
+  decoder.pipe(writer).pipe(speaker)
+})
+
+http.get(url, (res) =&gt; {
+  res.pipe(decoder)
+})
+</code></pre><p>So at this point I had the metadata and a raw wav stream playing but there wasn&#39;t any UI around it. At twilio signal they built a CLI tool for their conference using ink (<a href="https://www.twilio.com/blog/building-conference-cli-in-react">blog article here</a>) and that seemed cool so I went ahead and pulled that in.</p><h2>The TUI (Terminal UI)</h2><p>Ink uses react which is interesting for a terminal application, especially a node.js application, because normally you have a bunch of build processes setup to webpack/rollup/parcel the bundle to work properly. I went with vanilla babel because I didn&#39;t want to spend more than 45 minutes on the app. I had to write my own image component because the one that is in the inkjs docs throws an error on its latest version but the gist is below</p><pre><code class="language-javascript">import React, { useState, useEffect } from &#39;react&#39;
+import { render, useInput, Box, Text, Newline } from &#39;ink&#39;
+import BigText from &#39;ink-big-text&#39;
+import Divider from &#39;ink-divider&#39;
+import Image from &#39;./image.dist&#39;
+
+const UI = () =&gt; {
+  const [meta, setMeta] = useState({})
+
+  useEffect(() =&gt; {
+    radioStation.on(&#39;metadata&#39;, (metadata) =&gt; {
+      let params = query.decode(metadata.get(&#39;StreamUrl&#39;))
+      setMeta(params)
+    })
+
+    http.get(url, (res) =&gt; {
+      res.pipe(decoder)
+    })
+
+    decoder.on(&#39;format&#39;, (format) =&gt; {
+      const writer = new wav.Writer(format)
+      decoder.pipe(writer).pipe(speaker)
+    })
+
+    return () =&gt; {}
+  }, [])
+
+  return (
+    &lt;Box flexDirection=&quot;column&quot;&gt;
+      &lt;Box justifyContent=&quot;center&quot;&gt;
+        &lt;BigText text=&quot;Epic Rock Radio&quot; /&gt;
+      &lt;/Box&gt;
+
+      &lt;Box flexDirection=&quot;row&quot; justifyContent=&quot;center&quot;&gt;
+        &lt;Box
+          borderStyle=&quot;bold&quot;
+          width=&quot;20%&quot;
+          justifyContent=&quot;center&quot;
+          alignItems=&quot;center&quot;
+        &gt;
+          &lt;Image width=&quot;40%&quot; src={meta.picture}&gt;&lt;/Image&gt;
+        &lt;/Box&gt;
+
+        &lt;Box
+          borderStyle=&quot;bold&quot;
+          width=&quot;80%&quot;
+          flexDirection=&quot;column&quot;
+          justifyContent=&quot;center&quot;
+          padding={1}
+        &gt;
+          &lt;Divider title=&quot;Now Playing&quot;&gt;&lt;/Divider&gt;
+          &lt;Newline&gt;&lt;/Newline&gt;
+          &lt;Text bold&gt;{meta.title}&lt;/Text&gt;
+          &lt;Text&gt;
+            {meta.artist} - {meta.album}
+          &lt;/Text&gt;
+          &lt;Newline&gt;&lt;/Newline&gt;
+
+          &lt;Divider title=&quot;Controls&quot;&gt;&lt;/Divider&gt;
+          &lt;Newline&gt;&lt;/Newline&gt;
+          &lt;Text&gt;(q) Quit&lt;/Text&gt;
+        &lt;/Box&gt;
+      &lt;/Box&gt;
+    &lt;/Box&gt;
+  )
+}
+
+render(&lt;UI /&gt;)
+</code></pre><pre><code class="language-javascript">import React, { useState, useEffect } from &#39;react&#39;
+import { Box, Text } from &#39;ink&#39;
+import terminalImage from &#39;terminal-image&#39;
+import got from &#39;got&#39;
+
+const Image = (props) =&gt; {
+  const [imageData, setImageData] = useState(&#39;&#39;)
+
+  useEffect(() =&gt; {
+    ;(async () =&gt; {
+      if (!props.src) return
+      const body = await got(
+        `http://www.kaidata.com/pictures/${props.src}`,
+      ).buffer()
+      const response = await terminalImage.buffer(body, {
+        preserveAspectRatio: true,
+        width: props.width,
+        height: props.width,
+      })
+      setImageData(response)
+    })()
+
+    return () =&gt; {}
+  }, [props.src])
+
+  return (
+    &lt;Box&gt;
+      &lt;Text&gt;{imageData}&lt;/Text&gt;
+    &lt;/Box&gt;
+  )
+}
+
+module.exports = Image
+</code></pre><p>Every time the metadata is retrieved it re-renders the terminal UI with new album info and an image. I also added some user controls which you can browse in the source codes.</p><h2>Links Links Links</h2><ul><li><!-- lustre:fragment --><a href="https://github.com/vadimdemedes/ink">ink</a><!-- /lustre:fragment --></li><li><!-- lustre:fragment --><a href="https://www.npmjs.com/package/speaker">speaker</a><!-- /lustre:fragment --></li><li><!-- lustre:fragment --><a href="https://www.npmjs.com/package/icecast-parser">icecast-parser</a><!-- /lustre:fragment --></li><li><!-- lustre:fragment --><a href="https://github.com/nathanjohnson320/epic_rock_radio">source code</a><!-- /lustre:fragment --></li><li><!-- lustre:fragment --><a href="https://www.npmjs.com/package/epic_rock_radio">npm package</a><!-- /lustre:fragment --></li></ul></div></article></div></main><footer class="site-footer"><div class="container"><p>© Nathan Johnson. <a href="/">Home</a></p></div></footer></body></html>
