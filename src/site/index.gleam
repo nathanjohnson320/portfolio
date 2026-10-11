@@ -128,7 +128,7 @@ fn role(
     div([], [
       span([class("role-company")], [text(company)]),
       span([class("role-title")], [text(title)]),
-      span([class("role-dates")], [text(start <> " — " <> end)]),
+      span([class("role-dates")], [text(start <> " - " <> end)]),
     ]),
   ])
 }

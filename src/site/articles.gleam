@@ -11,7 +11,7 @@ pub fn view(articles: List(Article)) -> Element(msg) {
     div([], [
       app.page_heading(
         "Writing on software, art, and everything in between.",
-        "All of my long-form thoughts on programming, oil painting, and career — collected in chronological order.",
+        "All of my long-form thoughts on programming, oil painting, and career, collected in chronological order.",
       ),
       ul([class("article-list")], list.map(articles, article_item)),
     ]),

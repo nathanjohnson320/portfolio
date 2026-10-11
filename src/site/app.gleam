@@ -48,7 +48,7 @@ pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
 fn format_title(page_title: String) -> String {
   case page_title {
     "" -> "Nathan Johnson"
-    t -> t <> " — Nathan Johnson"
+    t -> t <> " - Nathan Johnson"
   }
 }
 
