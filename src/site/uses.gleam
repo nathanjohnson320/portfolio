@@ -16,8 +16,8 @@ pub fn page() -> Element(msg) {
   let sections = [
     ToolSection("Workstation", [
       Tool(
-        "14\" Starlabs Starbook",
-        "I've been using this as my main machine for a while now and it's been great. It's not the most powerful machine in the world but it's more than enough for my needs. The keyboard is great and the battery life is amazing. Also runs elementary OS which is a great Linux distro.",
+        "M4 Max Mac Studio",
+        "I used to have a 14\" Starlabs Starbook but I switched to a Mac Studio because it has way more horsepower and can run my LLM workflows. Also going back to macOS because it's just a better experience overall.",
       ),
       Tool(
         "Keyboard.io Model 100 Keyboard",
@@ -34,12 +34,12 @@ pub fn page() -> Element(msg) {
         "Yeah I know, I'm one of those people. I've been using Emacs for years and I don't see myself switching anytime soon. I've got it configured just how I like it and I'm super productive with it. And yes I switch to VS Code when I need to pair program with someone.",
       ),
       Tool(
-        "SQLTools",
-        "Great VS Code extension for working with databases. I use it a lot and it's saved me a ton of time.",
+        "Cursor",
+        "I know a lot of people use claude code these days, but I have way more success with cursor and it is exponentially faster. I dunno claude code doens't really cut it with the code quality either cursor tends to have better context and better code completions.",
       ),
       Tool(
-        "Copilot",
-        "Honestly one of the best tools I've ever used. It's like having a pair programmer that never gets tired and 90% has the perfect code snippet. 60% of the time it works every time.",
+        "SQLTools",
+        "Great VS Code extension for working with databases. I use it a lot and it's saved me a ton of time.",
       ),
     ]),
     ToolSection("Design", [
