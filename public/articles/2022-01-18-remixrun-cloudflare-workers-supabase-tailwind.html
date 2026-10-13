@@ -5,30 +5,32 @@
 </code></pre><p>Now if you run <code>yarn dev</code> or <code>npm run dev</code> it should start your app on localhost:8787</p><p><img alt="local remix starter page" src="/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-starter.png"></p><h2>Tailwind</h2><p>Install dependencies</p><pre><code>npm install --save @headlessui/react @heroicons/react @tailwindcss/forms tailwindcss
 </code></pre><p>Add a build command for the css to package.json &quot;scripts&quot;</p><pre><code>&quot;dev:css&quot;: &quot;tailwindcss -i ./styles/tailwind.css -o ./app/tailwind.css --watch&quot;,
 </code></pre><p>Update the &quot;dev&quot; script in package.json to concurrently build the css, remix, and worker</p><pre><code>&quot;dev&quot;: &quot;concurrently \&quot;npm run dev:css\&quot; \&quot;node -r dotenv/config node_modules/.bin/remix dev\&quot; \&quot;npm run start\&quot;&quot;,
-</code></pre><p>Add tailwind.config.js to the root of your app</p><pre><code class="language-javascript">module.exports = {
-  content: [&#39;./app/**/*.{ts,tsx}&#39;],
-  theme: {
-    extend: {},
-  },
-  plugins: [require(&#39;@tailwindcss/forms&#39;)],
-}
-</code></pre><p>Create a styles directory with the base tailwind css in it so the dev:css command will process it</p><pre><code class="language-css">/* styles/tailwind.css */
+</code></pre><p>Add tailwind.config.js to the root of your app</p><div><pre><code class="language-javascript">module<span class="smalto-punctuation">.</span>exports <span class="smalto-operator">=</span> <span class="smalto-punctuation">{</span>
+  <span class="smalto-property">content</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">[</span><span class="smalto-string">&#39;./app/**/*.{ts,tsx}&#39;</span><span class="smalto-punctuation">]</span><span class="smalto-punctuation">,</span>
+  <span class="smalto-property">theme</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">{</span>
+    <span class="smalto-property">extend</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">{</span><span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
+  <span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
+  <span class="smalto-property">plugins</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">[</span><span class="smalto-function">require</span><span class="smalto-punctuation">(</span><span class="smalto-string">&#39;@tailwindcss/forms&#39;</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">]</span><span class="smalto-punctuation">,</span>
+<span class="smalto-punctuation">}</span>
+</code></pre>
+</div><p>Create a styles directory with the base tailwind css in it so the dev:css command will process it</p><pre><code class="language-css">/* styles/tailwind.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-</code></pre><p>Now in the app/root.tsx we need to import and use the styles</p><pre><code class="language-typescript">import styles from &#39;./tailwind.css&#39;
+</code></pre><p>Now in the app/root.tsx we need to import and use the styles</p><div><pre><code class="language-typescript"><span class="smalto-keyword">import</span> styles <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;./tailwind.css&#39;</span>
 
-export function links() {
-  return [
-    // This is optional but is how to add a google font
-    {
-      rel: &#39;stylesheet&#39;,
-      href: &#39;https://fonts.googleapis.com/css?family=Open+Sans&#39;,
-    },
-    { rel: &#39;stylesheet&#39;, href: styles },
-  ]
-}
-</code></pre><p>In the root.tsx if we wrap the <code>&lt;Outlet /&gt;</code> in some tailwind styles it should display properly</p><pre><code>&lt;div className=&quot;relative bg-white overflow-hidden&quot;&gt;
+<span class="smalto-keyword">export</span> <span class="smalto-keyword">function</span> <span class="smalto-function">links</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span> <span class="smalto-punctuation">{</span>
+  <span class="smalto-keyword">return</span> <span class="smalto-punctuation">[</span>
+    <span class="smalto-comment">// This is optional but is how to add a google font</span>
+    <span class="smalto-punctuation">{</span>
+      rel<span class="smalto-operator">:</span> <span class="smalto-string">&#39;stylesheet&#39;</span><span class="smalto-punctuation">,</span>
+      href<span class="smalto-operator">:</span> <span class="smalto-string">&#39;https://fonts.googleapis.com/css?family=Open+Sans&#39;</span><span class="smalto-punctuation">,</span>
+    <span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
+    <span class="smalto-punctuation">{</span> rel<span class="smalto-operator">:</span> <span class="smalto-string">&#39;stylesheet&#39;</span><span class="smalto-punctuation">,</span> href<span class="smalto-operator">:</span> styles <span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
+  <span class="smalto-punctuation">]</span>
+<span class="smalto-punctuation">}</span>
+</code></pre>
+</div><p>In the root.tsx if we wrap the <code>&lt;Outlet /&gt;</code> in some tailwind styles it should display properly</p><pre><code>&lt;div className=&quot;relative bg-white overflow-hidden&quot;&gt;
   &lt;div className=&quot;mt-4&quot;&gt;
     &lt;Outlet /&gt;
    &lt;/div&gt;
@@ -39,47 +41,51 @@ export function links() {
 
 wrangler secret put SUPABASE_ANON_KEY
 ...enter the key
-</code></pre><p>Now we need to create a client that will use the right environment variables and fetch to work.</p><pre><code class="language-typescript">// app/db.ts
-import { createClient } from &#39;@supabase/supabase-js&#39;
+</code></pre><p>Now we need to create a client that will use the right environment variables and fetch to work.</p><div><pre><code class="language-typescript"><span class="smalto-comment">// app/db.ts</span>
+<span class="smalto-keyword">import</span> <span class="smalto-punctuation">{</span> createClient <span class="smalto-punctuation">}</span> <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;@supabase/supabase-js&#39;</span>
 
-export const supabase = () =&gt; {
-  // Globals are from cloudflare secrets
-  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    fetch: fetch.bind(globalThis),
-  })
-}
-</code></pre><p>To fix the typescript errors on the SUPABASE_URL and SUPABASE_ANON_KEY environment variables you&#39;ll need to make a bindings.d.ts as mentioned here: https://github.com/cloudflare/workers-types#using-bindings</p><pre><code class="language-typescript">export {}
+<span class="smalto-keyword">export</span> <span class="smalto-keyword">const</span> <span class="smalto-function">supabase</span> <span class="smalto-operator">=</span> <span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span> <span class="smalto-operator">=&gt;</span> <span class="smalto-punctuation">{</span>
+  <span class="smalto-comment">// Globals are from cloudflare secrets</span>
+  <span class="smalto-keyword">return</span> <span class="smalto-function">createClient</span><span class="smalto-punctuation">(</span><span class="smalto-constant">SUPABASE_URL</span><span class="smalto-punctuation">,</span> <span class="smalto-constant">SUPABASE_ANON_KEY</span><span class="smalto-punctuation">,</span> <span class="smalto-punctuation">{</span>
+    fetch<span class="smalto-operator">:</span> <span class="smalto-function">fetch</span><span class="smalto-punctuation">.</span><span class="smalto-function">bind</span><span class="smalto-punctuation">(</span>globalThis<span class="smalto-punctuation">)</span><span class="smalto-punctuation">,</span>
+  <span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span>
+<span class="smalto-punctuation">}</span>
+</code></pre>
+</div><p>To fix the typescript errors on the SUPABASE_URL and SUPABASE_ANON_KEY environment variables you&#39;ll need to make a bindings.d.ts as mentioned here: https://github.com/cloudflare/workers-types#using-bindings</p><div><pre><code class="language-typescript"><span class="smalto-keyword">export</span> <span class="smalto-punctuation">{</span><span class="smalto-punctuation">}</span>
 
-declare global {
-  const SUPABASE_ANON_KEY: string
-  const SUPABASE_URL: string
-}
-</code></pre><p>With that in place you can use it in your type files i.e.</p><pre><code class="language-typescript">// app/series.ts
-import { Season } from &#39;./season&#39;
-import { supabase } from &#39;./db&#39;
+<span class="smalto-keyword">declare</span> global <span class="smalto-punctuation">{</span>
+  <span class="smalto-keyword">const</span> <span class="smalto-constant">SUPABASE_ANON_KEY</span><span class="smalto-operator">:</span> <span class="smalto-builtin">string</span>
+  <span class="smalto-keyword">const</span> <span class="smalto-constant">SUPABASE_URL</span><span class="smalto-operator">:</span> <span class="smalto-builtin">string</span>
+<span class="smalto-punctuation">}</span>
+</code></pre>
+</div><p>With that in place you can use it in your type files i.e.</p><div><pre><code class="language-typescript"><span class="smalto-comment">// app/series.ts</span>
+<span class="smalto-keyword">import</span> <span class="smalto-punctuation">{</span> Season <span class="smalto-punctuation">}</span> <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;./season&#39;</span>
+<span class="smalto-keyword">import</span> <span class="smalto-punctuation">{</span> supabase <span class="smalto-punctuation">}</span> <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;./db&#39;</span>
 
-export type Series = {
-  index: number
-  title: string
-  seasons: Season[]
-}
+<span class="smalto-keyword">export</span> <span class="smalto-keyword">type</span> Series <span class="smalto-operator">=</span> <span class="smalto-punctuation">{</span>
+  index<span class="smalto-operator">:</span> <span class="smalto-builtin">number</span>
+  title<span class="smalto-operator">:</span> <span class="smalto-builtin">string</span>
+  seasons<span class="smalto-operator">:</span> Season<span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span>
+<span class="smalto-punctuation">}</span>
 
-export async function listSeries(): Promise&lt;Series[]&gt; {
-  const { data } = await supabase().from(&#39;series&#39;).select(`
+<span class="smalto-keyword">export</span> <span class="smalto-keyword">async</span> <span class="smalto-keyword">function</span> <span class="smalto-function">listSeries</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span><span class="smalto-operator">:</span> <span class="smalto-builtin">Promise</span><span class="smalto-operator">&lt;</span>Series<span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span><span class="smalto-operator">&gt;</span> <span class="smalto-punctuation">{</span>
+  <span class="smalto-keyword">const</span> <span class="smalto-punctuation">{</span> data <span class="smalto-punctuation">}</span> <span class="smalto-operator">=</span> <span class="smalto-keyword">await</span> <span class="smalto-function">supabase</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">.</span><span class="smalto-function">from</span><span class="smalto-punctuation">(</span><span class="smalto-string">&#39;series&#39;</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">.</span><span class="smalto-function">select</span><span class="smalto-punctuation">(</span><span class="smalto-string">`</span><span class="smalto-string">
   index,
   title,
   seasons (
     index
   )
-`)
+</span><span class="smalto-string">`</span><span class="smalto-punctuation">)</span>
 
-  return data as Series[]
-}
-</code></pre><p>And in your loader</p><pre><code class="language-typescript">export const loader: LoaderFunction = async ({ params }) =&gt; {
-  const series = await listSeries()
+  <span class="smalto-keyword">return</span> data <span class="smalto-keyword">as</span> Series<span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span>
+<span class="smalto-punctuation">}</span>
+</code></pre>
+</div><p>And in your loader</p><div><pre><code class="language-typescript"><span class="smalto-keyword">export</span> <span class="smalto-keyword">const</span> loader<span class="smalto-operator">:</span> <span class="smalto-function">LoaderFunction</span> <span class="smalto-operator">=</span> <span class="smalto-keyword">async</span> <span class="smalto-punctuation">(</span><span class="smalto-punctuation">{</span> params <span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span> <span class="smalto-operator">=&gt;</span> <span class="smalto-punctuation">{</span>
+  <span class="smalto-keyword">const</span> series <span class="smalto-operator">=</span> <span class="smalto-keyword">await</span> <span class="smalto-function">listSeries</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span>
 
-  return {
-    series,
-  }
-}
-</code></pre></div></article></div></main><footer class="site-footer"><div class="container"><p>© Nathan Johnson. <a href="/">Home</a></p></div></footer></body></html>
+  <span class="smalto-keyword">return</span> <span class="smalto-punctuation">{</span>
+    series<span class="smalto-punctuation">,</span>
+  <span class="smalto-punctuation">}</span>
+<span class="smalto-punctuation">}</span>
+</code></pre>
+</div></div></article></div></main><footer class="site-footer"><div class="container"><p>© Nathan Johnson. <a href="/">Home</a></p></div></footer></body></html>

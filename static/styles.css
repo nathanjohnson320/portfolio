@@ -459,6 +459,59 @@ a:hover {
   border-radius: 0.25rem;
 }
 
+/* smalto syntax highlighting (dark pre background) */
+.article-body .smalto-keyword,
+.article-body .smalto-boolean {
+  color: #fbbf24;
+}
+.article-body .smalto-string,
+.article-body .smalto-symbol {
+  color: #86efac;
+}
+.article-body .smalto-number {
+  color: #fdba74;
+}
+.article-body .smalto-comment {
+  color: #a8a29e;
+  font-style: italic;
+}
+.article-body .smalto-function,
+.article-body .smalto-parameter {
+  color: #93c5fd;
+}
+.article-body .smalto-operator {
+  color: #f0abfc;
+}
+.article-body .smalto-punctuation {
+  color: #d6d3d1;
+}
+.article-body .smalto-type,
+.article-body .smalto-module,
+.article-body .smalto-class-name {
+  color: #67e8f9;
+}
+.article-body .smalto-variable {
+  color: #fde68a;
+}
+.article-body .smalto-constant,
+.article-body .smalto-builtin {
+  color: #c4b5fd;
+}
+.article-body .smalto-tag {
+  color: #fca5a5;
+}
+.article-body .smalto-attribute,
+.article-body .smalto-attr-name,
+.article-body .smalto-property {
+  color: #fcd34d;
+}
+.article-body .smalto-selector {
+  color: #5eead4;
+}
+.article-body .smalto-regex {
+  color: #86efac;
+}
+
 .article-body ul,
 .article-body ol {
   padding-left: 1.25rem;

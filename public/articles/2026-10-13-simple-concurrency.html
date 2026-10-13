@@ -1,80 +1,81 @@
 <!doctype html>
-<!-- lustre:map --><html><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1" name="viewport"><link href="/styles.css" rel="stylesheet"><link href="/favicon.ico" rel="icon"><title>Simple Concurrency - Nathan Johnson</title></head><body><header class="site-header"><div class="container header-inner"><a class="site-brand" href="/">Nathan Johnson</a><nav class="site-nav"><ul><li><a href="/about">About</a></li><li><a href="/articles">Articles</a></li><li><a href="/projects">Projects</a></li><li><a href="/uses">Uses</a></li></ul></nav></div></header><main class="site-main"><div class="container"><article class="prose"><p class="back"><a href="/articles">← Articles</a></p><h1>Simple Concurrency</h1><time>October 13, 2026</time><div class="article-body"><p>This is a bit of a random one but I often run into this issue where I need to ETL data out of postgress and reformat it and put it somewhere else. Our databases can run quite large so you can&#39;t really do the Repo.all variants without blowing up the pool so instead I leverage something like this:</p><pre><code class="language-elixir">defmodule MyApp.StreamETL do
-  @batch_size 500
-  @stream_concurrency 4
+<!-- lustre:map --><html><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1" name="viewport"><link href="/styles.css" rel="stylesheet"><link href="/favicon.ico" rel="icon"><title>Simple Concurrency - Nathan Johnson</title></head><body><header class="site-header"><div class="container header-inner"><a class="site-brand" href="/">Nathan Johnson</a><nav class="site-nav"><ul><li><a href="/about">About</a></li><li><a href="/articles">Articles</a></li><li><a href="/projects">Projects</a></li><li><a href="/uses">Uses</a></li></ul></nav></div></header><main class="site-main"><div class="container"><article class="prose"><p class="back"><a href="/articles">← Articles</a></p><h1>Simple Concurrency</h1><time>October 13, 2026</time><div class="article-body"><p>This is a bit of a random one but I often run into this issue where I need to ETL data out of postgress and reformat it and put it somewhere else. Our databases can run quite large so you can&#39;t really do the Repo.all variants without blowing up the pool so instead I leverage something like this:</p><div><pre><code class="language-elixir"><span class="smalto-keyword">defmodule</span> <span class="smalto-class-name">MyApp</span><span class="smalto-punctuation">.</span><span class="smalto-class-name">StreamETL</span> <span class="smalto-keyword">do</span>
+  <span class="smalto-variable">@batch_size</span> <span class="smalto-number">500</span>
+  <span class="smalto-variable">@stream_concurrency</span> <span class="smalto-number">4</span>
 
-  defp worker(parent, params, aggregate) do
-    receive do
-      {:batch, rows} -&gt;
-        aggregate = process_batch(rows, params, aggregate)
-        send(parent, {:ack, self(), aggregate})
-        worker(parent, params, aggregate)
+  <span class="smalto-keyword">defp</span> <span class="smalto-function">worker</span><span class="smalto-punctuation">(</span>parent<span class="smalto-punctuation">,</span> params<span class="smalto-punctuation">,</span> aggregate<span class="smalto-punctuation">)</span> <span class="smalto-keyword">do</span>
+    receive <span class="smalto-keyword">do</span>
+      <span class="smalto-punctuation">{</span><span class="smalto-symbol">:batch</span><span class="smalto-punctuation">,</span> rows<span class="smalto-punctuation">}</span> <span class="smalto-operator">-&gt;</span>
+        aggregate <span class="smalto-operator">=</span> <span class="smalto-function">process_batch</span><span class="smalto-punctuation">(</span>rows<span class="smalto-punctuation">,</span> params<span class="smalto-punctuation">,</span> aggregate<span class="smalto-punctuation">)</span>
+        <span class="smalto-function">send</span><span class="smalto-punctuation">(</span>parent<span class="smalto-punctuation">,</span> <span class="smalto-punctuation">{</span><span class="smalto-symbol">:ack</span><span class="smalto-punctuation">,</span> <span class="smalto-function">self</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">,</span> aggregate<span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span>
+        <span class="smalto-function">worker</span><span class="smalto-punctuation">(</span>parent<span class="smalto-punctuation">,</span> params<span class="smalto-punctuation">,</span> aggregate<span class="smalto-punctuation">)</span>
 
-      :done -&gt;
+      <span class="smalto-symbol">:done</span> <span class="smalto-operator">-&gt;</span>
         aggregate
-    end
-  end
+    <span class="smalto-keyword">end</span>
+  <span class="smalto-keyword">end</span>
 
-  # Your ETL / reformatting work goes here
-  defp process_batch(rows, _params, aggregate) do
-    Enum.reduce(rows, aggregate, fn row, acc -&gt; [row | acc] end)
-  end
+  <span class="smalto-comment"># Your ETL / reformatting work goes here</span>
+  <span class="smalto-keyword">defp</span> <span class="smalto-function">process_batch</span><span class="smalto-punctuation">(</span>rows<span class="smalto-punctuation">,</span> _params<span class="smalto-punctuation">,</span> aggregate<span class="smalto-punctuation">)</span> <span class="smalto-keyword">do</span>
+    <span class="smalto-class-name">Enum</span><span class="smalto-punctuation">.</span><span class="smalto-function">reduce</span><span class="smalto-punctuation">(</span>rows<span class="smalto-punctuation">,</span> aggregate<span class="smalto-punctuation">,</span> <span class="smalto-keyword">fn</span> row<span class="smalto-punctuation">,</span> acc <span class="smalto-operator">-&gt;</span> <span class="smalto-punctuation">[</span>row <span class="smalto-operator">|</span> acc<span class="smalto-punctuation">]</span> <span class="smalto-keyword">end</span><span class="smalto-punctuation">)</span>
+  <span class="smalto-keyword">end</span>
 
-  defp stream_data(params, pids) do
+  <span class="smalto-keyword">defp</span> <span class="smalto-function">stream_data</span><span class="smalto-punctuation">(</span>params<span class="smalto-punctuation">,</span> pids<span class="smalto-punctuation">)</span> <span class="smalto-keyword">do</span>
     params
-    # Can be any query function
-    |&gt; build_query()
-    |&gt; Repo.stream(max_rows: @batch_size)
-    |&gt; Stream.chunk_every(@batch_size)
-    |&gt; Enum.reduce({0, pids, []}, &amp;dispatch_stream_batch/2)
-    |&gt; drain_stream_batches()
-  end
+    <span class="smalto-comment"># Can be any query function</span>
+    <span class="smalto-operator">|&gt;</span> <span class="smalto-function">build_query</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span>
+    <span class="smalto-operator">|&gt;</span> <span class="smalto-class-name">Repo</span><span class="smalto-punctuation">.</span><span class="smalto-function">stream</span><span class="smalto-punctuation">(</span><span class="smalto-attr-name">max_rows:</span> <span class="smalto-variable">@batch_size</span><span class="smalto-punctuation">)</span>
+    <span class="smalto-operator">|&gt;</span> <span class="smalto-class-name">Stream</span><span class="smalto-punctuation">.</span><span class="smalto-function">chunk_every</span><span class="smalto-punctuation">(</span><span class="smalto-variable">@batch_size</span><span class="smalto-punctuation">)</span>
+    <span class="smalto-operator">|&gt;</span> <span class="smalto-class-name">Enum</span><span class="smalto-punctuation">.</span><span class="smalto-function">reduce</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">{</span><span class="smalto-number">0</span><span class="smalto-punctuation">,</span> pids<span class="smalto-punctuation">,</span> <span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span><span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span> <span class="smalto-operator">&amp;</span><span class="smalto-function">dispatch_stream_batch</span><span class="smalto-operator">/</span><span class="smalto-number">2</span><span class="smalto-punctuation">)</span>
+    <span class="smalto-operator">|&gt;</span> <span class="smalto-function">drain_stream_batches</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span>
+  <span class="smalto-keyword">end</span>
 
-  defp dispatch_stream_batch(batch, {in_flight, free, acc}) do
-    # Block until a worker is free (backpressure)
-    {in_flight, free, acc} =
-      receive_stream_acks(in_flight, free, acc, @stream_concurrency - 1)
+  <span class="smalto-keyword">defp</span> <span class="smalto-function">dispatch_stream_batch</span><span class="smalto-punctuation">(</span>batch<span class="smalto-punctuation">,</span> <span class="smalto-punctuation">{</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span> <span class="smalto-keyword">do</span>
+    <span class="smalto-comment"># Block until a worker is free (backpressure)</span>
+    <span class="smalto-punctuation">{</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">}</span> <span class="smalto-operator">=</span>
+      <span class="smalto-function">receive_stream_acks</span><span class="smalto-punctuation">(</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">,</span> <span class="smalto-variable">@stream_concurrency</span> <span class="smalto-operator">-</span> <span class="smalto-number">1</span><span class="smalto-punctuation">)</span>
 
-    [worker_pid | free] = free
-    send(worker_pid, {:batch, batch})
-    {in_flight + 1, free, acc}
-  end
+    <span class="smalto-punctuation">[</span>worker_pid <span class="smalto-operator">|</span> free<span class="smalto-punctuation">]</span> <span class="smalto-operator">=</span> free
+    <span class="smalto-function">send</span><span class="smalto-punctuation">(</span>worker_pid<span class="smalto-punctuation">,</span> <span class="smalto-punctuation">{</span><span class="smalto-symbol">:batch</span><span class="smalto-punctuation">,</span> batch<span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span>
+    <span class="smalto-punctuation">{</span>in_flight <span class="smalto-operator">+</span> <span class="smalto-number">1</span><span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">}</span>
+  <span class="smalto-keyword">end</span>
 
-  defp drain_stream_batches({in_flight, free, acc}) do
-    receive_stream_acks(in_flight, free, acc, 0)
-  end
+  <span class="smalto-keyword">defp</span> <span class="smalto-function">drain_stream_batches</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">{</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span> <span class="smalto-keyword">do</span>
+    <span class="smalto-function">receive_stream_acks</span><span class="smalto-punctuation">(</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">,</span> <span class="smalto-number">0</span><span class="smalto-punctuation">)</span>
+  <span class="smalto-keyword">end</span>
 
-  defp receive_stream_acks(in_flight, free, acc, max_in_flight)
-       when in_flight &lt;= max_in_flight do
-    {in_flight, free, acc}
-  end
+  <span class="smalto-keyword">defp</span> <span class="smalto-function">receive_stream_acks</span><span class="smalto-punctuation">(</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">,</span> max_in_flight<span class="smalto-punctuation">)</span>
+       <span class="smalto-keyword">when</span> in_flight <span class="smalto-operator">&lt;=</span> max_in_flight <span class="smalto-keyword">do</span>
+    <span class="smalto-punctuation">{</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">}</span>
+  <span class="smalto-keyword">end</span>
 
-  defp receive_stream_acks(in_flight, free, acc, max_in_flight) do
-    receive do
-      {:ack, worker_pid, _worker_acc} -&gt;
-        receive_stream_acks(in_flight - 1, [worker_pid | free], acc, max_in_flight)
-    end
-  end
+  <span class="smalto-keyword">defp</span> <span class="smalto-function">receive_stream_acks</span><span class="smalto-punctuation">(</span>in_flight<span class="smalto-punctuation">,</span> free<span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">,</span> max_in_flight<span class="smalto-punctuation">)</span> <span class="smalto-keyword">do</span>
+    receive <span class="smalto-keyword">do</span>
+      <span class="smalto-punctuation">{</span><span class="smalto-symbol">:ack</span><span class="smalto-punctuation">,</span> worker_pid<span class="smalto-punctuation">,</span> _worker_acc<span class="smalto-punctuation">}</span> <span class="smalto-operator">-&gt;</span>
+        <span class="smalto-function">receive_stream_acks</span><span class="smalto-punctuation">(</span>in_flight <span class="smalto-operator">-</span> <span class="smalto-number">1</span><span class="smalto-punctuation">,</span> <span class="smalto-punctuation">[</span>worker_pid <span class="smalto-operator">|</span> free<span class="smalto-punctuation">]</span><span class="smalto-punctuation">,</span> acc<span class="smalto-punctuation">,</span> max_in_flight<span class="smalto-punctuation">)</span>
+    <span class="smalto-keyword">end</span>
+  <span class="smalto-keyword">end</span>
 
-  # --- script / entrypoint ---
+  <span class="smalto-comment"># --- script / entrypoint ---</span>
 
-  def run(params) do
-    parent = self()
+  <span class="smalto-keyword">def</span> <span class="smalto-function">run</span><span class="smalto-punctuation">(</span>params<span class="smalto-punctuation">)</span> <span class="smalto-keyword">do</span>
+    parent <span class="smalto-operator">=</span> <span class="smalto-function">self</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span>
 
-    # Spin up workers up to whatever concurrency you can tolerate
-    workers =
-      Enum.map(1..@stream_concurrency, fn _ -&gt;
-        Task.async(fn -&gt; worker(parent, params, []) end)
-      end)
+    <span class="smalto-comment"># Spin up workers up to whatever concurrency you can tolerate</span>
+    workers <span class="smalto-operator">=</span>
+      <span class="smalto-class-name">Enum</span><span class="smalto-punctuation">.</span><span class="smalto-function">map</span><span class="smalto-punctuation">(</span><span class="smalto-number">1</span><span class="smalto-operator">..</span><span class="smalto-variable">@stream_concurrency</span><span class="smalto-punctuation">,</span> <span class="smalto-keyword">fn</span> _ <span class="smalto-operator">-&gt;</span>
+        <span class="smalto-class-name">Task</span><span class="smalto-punctuation">.</span><span class="smalto-function">async</span><span class="smalto-punctuation">(</span><span class="smalto-keyword">fn</span> <span class="smalto-operator">-&gt;</span> <span class="smalto-function">worker</span><span class="smalto-punctuation">(</span>parent<span class="smalto-punctuation">,</span> params<span class="smalto-punctuation">,</span> <span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span><span class="smalto-punctuation">)</span> <span class="smalto-keyword">end</span><span class="smalto-punctuation">)</span>
+      <span class="smalto-keyword">end</span><span class="smalto-punctuation">)</span>
 
-    # Repo.stream must run inside a transaction
-    Repo.transaction(
-      fn -&gt; stream_data(params, Enum.map(workers, &amp; &amp;1.pid)) end,
-      timeout: :infinity
-    )
+    <span class="smalto-comment"># Repo.stream must run inside a transaction</span>
+    <span class="smalto-class-name">Repo</span><span class="smalto-punctuation">.</span><span class="smalto-function">transaction</span><span class="smalto-punctuation">(</span>
+      <span class="smalto-keyword">fn</span> <span class="smalto-operator">-&gt;</span> <span class="smalto-function">stream_data</span><span class="smalto-punctuation">(</span>params<span class="smalto-punctuation">,</span> <span class="smalto-class-name">Enum</span><span class="smalto-punctuation">.</span><span class="smalto-function">map</span><span class="smalto-punctuation">(</span>workers<span class="smalto-punctuation">,</span> <span class="smalto-operator">&amp;</span> <span class="smalto-variable">&amp;1</span><span class="smalto-punctuation">.</span>pid<span class="smalto-punctuation">)</span><span class="smalto-punctuation">)</span> <span class="smalto-keyword">end</span><span class="smalto-punctuation">,</span>
+      <span class="smalto-attr-name">timeout:</span> <span class="smalto-symbol">:infinity</span>
+    <span class="smalto-punctuation">)</span>
 
-    Enum.each(workers, &amp;send(&amp;1.pid, :done))
-    Enum.map(workers, &amp;Task.await(&amp;1, :infinity))
-  end
-end
-</code></pre><p>How it works is that it sends messages from the stream results to the top level processor and each one goes until it hits a :done atom. At that point all the results are then returned. You can optionally ignore all the results or refactor to write somewhere else like another process etc etc. Very versatile. Anyways that&#39;s all for now.</p></div></article></div></main><footer class="site-footer"><div class="container"><p>© Nathan Johnson. <a href="/">Home</a></p></div></footer></body></html>
+    <span class="smalto-class-name">Enum</span><span class="smalto-punctuation">.</span><span class="smalto-function">each</span><span class="smalto-punctuation">(</span>workers<span class="smalto-punctuation">,</span> <span class="smalto-operator">&amp;</span><span class="smalto-function">send</span><span class="smalto-punctuation">(</span><span class="smalto-variable">&amp;1</span><span class="smalto-punctuation">.</span>pid<span class="smalto-punctuation">,</span> <span class="smalto-symbol">:done</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">)</span>
+    <span class="smalto-class-name">Enum</span><span class="smalto-punctuation">.</span><span class="smalto-function">map</span><span class="smalto-punctuation">(</span>workers<span class="smalto-punctuation">,</span> <span class="smalto-operator">&amp;</span><span class="smalto-class-name">Task</span><span class="smalto-punctuation">.</span><span class="smalto-function">await</span><span class="smalto-punctuation">(</span><span class="smalto-variable">&amp;1</span><span class="smalto-punctuation">,</span> <span class="smalto-symbol">:infinity</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">)</span>
+  <span class="smalto-keyword">end</span>
+<span class="smalto-keyword">end</span>
+</code></pre>
+</div><p>How it works is that it sends messages from the stream results to the top level processor and each one goes until it hits a :done atom. At that point all the results are then returned. You can optionally ignore all the results or refactor to write somewhere else like another process etc etc. Very versatile. Anyways that&#39;s all for now.</p></div></article></div></main><footer class="site-footer"><div class="container"><p>© Nathan Johnson. <a href="/">Home</a></p></div></footer></body></html>
