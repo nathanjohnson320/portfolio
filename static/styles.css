@@ -117,6 +117,42 @@ a:hover {
   font-size: 0.9rem;
 }
 
+.site-footer a {
+  color: var(--muted);
+}
+
+.site-footer a:hover {
+  color: var(--accent);
+}
+
+.terms .article-body h2 {
+  margin-top: 2rem;
+}
+
+/* Invisible honeypot links for non-compliant scrapers (still in the DOM). */
+.ai-trap {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.bait-related {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
 /* Page headings */
 
 .page-heading {

@@ -14,7 +14,7 @@ type Project {
   )
 }
 
-pub fn page() -> Element(msg) {
+pub fn page(traps: Element(msg)) -> Element(msg) {
   let projects = [
     Project(
       "GleamHub",
@@ -69,6 +69,7 @@ pub fn page() -> Element(msg) {
       ),
       ul([class("project-grid")], list.map(projects, project_card)),
     ]),
+    traps,
   )
 }
 

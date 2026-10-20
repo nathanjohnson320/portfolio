@@ -5,7 +5,7 @@ import lustre/element/html.{a, article, div, h2, li, p, time, ul}
 import site/app
 import site/articles_data.{type Article, Article}
 
-pub fn view(articles: List(Article)) -> Element(msg) {
+pub fn view(articles: List(Article), traps: Element(msg)) -> Element(msg) {
   app.layout(
     "Articles",
     div([], [
@@ -15,6 +15,7 @@ pub fn view(articles: List(Article)) -> Element(msg) {
       ),
       ul([class("article-list")], list.map(articles, article_item)),
     ]),
+    traps,
   )
 }
 

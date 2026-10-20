@@ -1,0 +1,24 @@
+# Nathan Johnson — career.paintbynate.art
+# https://career.paintbynate.art/terms
+
+> This site does not allow LLM / AI scraping or training use.
+
+This website and its contents are provided for human readers only.
+Automated collection, scraping, embedding, indexing for generative AI,
+or use of any material here to train, fine-tune, evaluate, or operate
+AI systems is prohibited.
+
+- Terms of Use: /terms
+- Contact: nate@paintbynate.art
+
+## Allowed
+
+- Ordinary web browsing by humans
+- Conventional search-engine indexing that is not used for model training
+  (subject to the Terms of Use)
+
+## Disallowed
+
+- Scraping or bulk downloading of pages, images, or files
+- Use of content in training, fine-tuning, RAG corpora, or evaluation sets
+- Reproduction of site content in AI-generated answers without permission

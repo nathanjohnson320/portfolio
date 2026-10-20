@@ -7,7 +7,7 @@ import lustre/element/html.{
 import site/app
 import site/articles_data.{type Article, Article}
 
-pub fn page(articles: List(Article)) -> Element(msg) {
+pub fn page(articles: List(Article), traps: Element(msg)) -> Element(msg) {
   let latest = list.take(articles, 4)
 
   app.layout(
@@ -42,6 +42,7 @@ pub fn page(articles: List(Article)) -> Element(msg) {
         resume(),
       ]),
     ]),
+    traps,
   )
 }
 

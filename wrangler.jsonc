@@ -18,5 +18,8 @@
   "observability": {
     "enabled": true
   },
-  "compatibility_flags": ["nodejs_compat"]
+  "compatibility_flags": ["nodejs_compat"],
+  // Required for Workers Builds preview deployments (`npx wrangler preview`).
+  // Empty is fine: this Worker is static assets only.
+  "previews": {}
 }

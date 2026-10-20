@@ -6,13 +6,29 @@ import lustre/element/html.{
 }
 
 /// Shared page chrome: stylesheet, site header, footer.
-pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
+/// `traps` is the invisible honeypot link farm for this build.
+pub fn layout(
+  page_title: String,
+  page: Element(msg),
+  traps: Element(msg),
+) -> Element(msg) {
   html([], [
     head([], [
       meta([charset("utf-8")]),
       meta([
         name("viewport"),
         content("width=device-width, initial-scale=1"),
+      ]),
+      // Discourage generative-AI scraping / training use.
+      meta([name("robots"), content("max-image-preview:large, noai, noimageai")]),
+      meta([name("googlebot"), content("noai, noimageai")]),
+      meta([name("google-extended"), content("nosnippet, noai")]),
+      meta([name("ai"), content("notrain, noindex")]),
+      meta([
+        name("description"),
+        content(
+          "Personal site of Nathan Johnson. Content may not be scraped or used to train AI systems. See /terms.",
+        ),
       ]),
       link([rel("stylesheet"), href("/styles.css")]),
       link([rel("icon"), href("/favicon.ico")]),
@@ -38,9 +54,13 @@ pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
           p([], [
             text("© Nathan Johnson. "),
             a([href("/")], [text("Home")]),
+            text(" · "),
+            a([href("/terms")], [text("Terms")]),
+            text(" — content may not be used to train AI."),
           ]),
         ]),
       ]),
+      traps,
     ]),
   ])
 }
