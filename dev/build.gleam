@@ -8,6 +8,7 @@ import site/articles
 import site/articles_data.{Article}
 import site/index
 import site/projects
+import site/terms
 import site/uses
 
 pub fn main() {
@@ -31,6 +32,7 @@ pub fn main() {
         |> ssg.add_dynamic_route("/articles", posts_dict, article.view)
         |> ssg.add_static_route("/projects", projects.page())
         |> ssg.add_static_route("/uses", uses.page())
+        |> ssg.add_static_route("/terms", terms.page())
         |> ssg.use_index_routes()
         |> ssg.build
 

@@ -1,0 +1,13 @@
+# ai.txt — machine-readable notice of AI use policy
+# Human-readable terms: https://career.paintbynate.art/terms
+
+User-Agent: *
+Allow: none
+Disallow-Training: /
+Disallow-Scraping: /
+Contact: nate@paintbynate.art
+Policy: https://career.paintbynate.art/terms
+
+# Content on this website may not be used to train, fine-tune, evaluate,
+# or otherwise improve any artificial intelligence, machine learning, or
+# large language model system, without prior written permission.

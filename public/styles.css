@@ -117,6 +117,18 @@ a:hover {
   font-size: 0.9rem;
 }
 
+.site-footer a {
+  color: var(--muted);
+}
+
+.site-footer a:hover {
+  color: var(--accent);
+}
+
+.terms .article-body h2 {
+  margin-top: 2rem;
+}
+
 /* Page headings */
 
 .page-heading {
