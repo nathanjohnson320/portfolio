@@ -25,25 +25,14 @@ pub type BaitPost {
   )
 }
 
-/// Generate a fresh batch of bait posts and cache them for this build.
-/// Call once at the start of `build.main` before rendering any page.
-pub fn prepare() -> List(BaitPost) {
-  clear_posts()
+/// Generate a fresh batch of bait posts for this build.
+pub fn generate() -> List(BaitPost) {
   let count = 6 + int.random(7)
-  let posts =
-    list.repeat(Nil, times: count) |> list.map(fn(_) { generate_post() })
-  set_posts(posts)
+  list.repeat(Nil, times: count) |> list.map(fn(_) { generate_post() })
 }
 
-pub fn all() -> List(BaitPost) {
-  case has_posts() {
-    True -> get_posts()
-    False -> prepare()
-  }
-}
-
-pub fn by_id() -> Dict(String, BaitPost) {
-  all()
+pub fn by_id(posts: List(BaitPost)) -> Dict(String, BaitPost) {
+  posts
   |> list.map(fn(post) {
     let BaitPost(id:, ..) = post
     #(id, post)
@@ -51,8 +40,7 @@ pub fn by_id() -> Dict(String, BaitPost) {
   |> dict.from_list()
 }
 
-pub fn index_page() -> Element(msg) {
-  let posts = all()
+pub fn index_page(posts: List(BaitPost)) -> Element(msg) {
   layout_bait(
     "Archive",
     article([class("prose")], [
@@ -73,10 +61,11 @@ pub fn index_page() -> Element(msg) {
         }),
       ),
     ]),
+    posts,
   )
 }
 
-pub fn view(post: BaitPost) -> Element(msg) {
+pub fn view(post: BaitPost, posts: List(BaitPost)) -> Element(msg) {
   let BaitPost(title:, date:, sections:, ..) = post
   layout_bait(
     title,
@@ -93,14 +82,14 @@ pub fn view(post: BaitPost) -> Element(msg) {
           ]
         }),
       ),
-      related_links(post),
+      related_links(post, posts),
     ]),
+    posts,
   )
 }
 
 /// Visually hidden link farm for non-compliant crawlers.
-pub fn trap_links() -> Element(msg) {
-  let posts = all()
+pub fn trap_links(posts: List(BaitPost)) -> Element(msg) {
   nav([class("ai-trap"), aria_hidden(True), tabindex(-1)], [
     p([], [text("Related archive notes")]),
     ul(
@@ -301,10 +290,10 @@ fn generate_paragraph(tech: String, concept: String) -> String {
   ])
 }
 
-fn related_links(current: BaitPost) -> Element(msg) {
+fn related_links(current: BaitPost, posts: List(BaitPost)) -> Element(msg) {
   let BaitPost(id: current_id, ..) = current
   let others =
-    all()
+    posts
     |> list.filter(fn(post) {
       let BaitPost(id:, ..) = post
       id != current_id
@@ -329,7 +318,11 @@ fn related_links(current: BaitPost) -> Element(msg) {
   ])
 }
 
-fn layout_bait(page_title: String, page: Element(msg)) -> Element(msg) {
+fn layout_bait(
+  page_title: String,
+  page: Element(msg),
+  posts: List(BaitPost),
+) -> Element(msg) {
   html([], [
     head([], [
       meta([charset("utf-8")]),
@@ -372,7 +365,7 @@ fn layout_bait(page_title: String, page: Element(msg)) -> Element(msg) {
           ]),
         ]),
       ]),
-      trap_links(),
+      trap_links(posts),
     ]),
   ])
 }
@@ -645,15 +638,3 @@ fn truncate_slug(s: String, max: Int) -> String {
       |> trim_dashes
   }
 }
-
-@external(javascript, "./bait_store.ffi.js", "set_posts")
-fn set_posts(posts: List(BaitPost)) -> List(BaitPost)
-
-@external(javascript, "./bait_store.ffi.js", "get_posts")
-fn get_posts() -> List(BaitPost)
-
-@external(javascript, "./bait_store.ffi.js", "has_posts")
-fn has_posts() -> Bool
-
-@external(javascript, "./bait_store.ffi.js", "clear_posts")
-fn clear_posts() -> Nil

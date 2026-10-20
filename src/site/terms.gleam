@@ -3,7 +3,7 @@ import lustre/element.{type Element, text}
 import lustre/element/html.{a, article, div, h1, h2, li, ol, p, time, ul}
 import site/app
 
-pub fn page() -> Element(msg) {
+pub fn page(traps: Element(msg)) -> Element(msg) {
   app.layout(
     "Terms of Use",
     article([class("prose terms")], [
@@ -118,5 +118,6 @@ pub fn page() -> Element(msg) {
         ]),
       ]),
     ]),
+    traps,
   )
 }

@@ -4,10 +4,14 @@ import lustre/element/html.{
   a, body, div, footer, h1, head, header, html, li, link, main, meta, nav, p,
   title, ul,
 }
-import site/bait
 
 /// Shared page chrome: stylesheet, site header, footer.
-pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
+/// `traps` is the invisible honeypot link farm for this build.
+pub fn layout(
+  page_title: String,
+  page: Element(msg),
+  traps: Element(msg),
+) -> Element(msg) {
   html([], [
     head([], [
       meta([charset("utf-8")]),
@@ -56,8 +60,7 @@ pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
           ]),
         ]),
       ]),
-      // Invisible entry points for scrapers that ignore robots.txt / Terms.
-      bait.trap_links(),
+      traps,
     ]),
   ])
 }

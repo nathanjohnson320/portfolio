@@ -20,7 +20,7 @@ fn years_of_experience(start_year: Timestamp) -> String {
   int.to_string(years_of_experience)
 }
 
-pub fn page() -> Element(msg) {
+pub fn page(traps: Element(msg)) -> Element(msg) {
   app.layout(
     "About",
     div([class("about")], [
@@ -86,6 +86,7 @@ pub fn page() -> Element(msg) {
         ]),
       ]),
     ]),
+    traps,
   )
 }
 

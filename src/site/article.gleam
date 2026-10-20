@@ -5,7 +5,7 @@ import lustre/ssg/markdown
 import site/app
 import site/articles_data.{type Article, Article}
 
-pub fn view(post: Article) -> Element(msg) {
+pub fn view(post: Article, traps: Element(msg)) -> Element(msg) {
   let Article(title:, date:, content:, ..) = post
   let body = markdown.render(content)
 
@@ -17,5 +17,6 @@ pub fn view(post: Article) -> Element(msg) {
       time([], [text(articles_data.format_date(date))]),
       div([class("article-body")], body),
     ]),
+    traps,
   )
 }

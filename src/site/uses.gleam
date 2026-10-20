@@ -12,7 +12,7 @@ type ToolSection {
   ToolSection(title: String, tools: List(Tool))
 }
 
-pub fn page() -> Element(msg) {
+pub fn page(traps: Element(msg)) -> Element(msg) {
   let sections = [
     ToolSection("Workstation", [
       Tool(
@@ -59,6 +59,7 @@ pub fn page() -> Element(msg) {
       ),
       div([class("uses-sections")], list.map(sections, render_section)),
     ]),
+    traps,
   )
 }
 
