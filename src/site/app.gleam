@@ -4,6 +4,7 @@ import lustre/element/html.{
   a, body, div, footer, h1, head, header, html, li, link, main, meta, nav, p,
   title, ul,
 }
+import site/bait
 
 /// Shared page chrome: stylesheet, site header, footer.
 pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
@@ -55,6 +56,8 @@ pub fn layout(page_title: String, page: Element(msg)) -> Element(msg) {
           ]),
         ]),
       ]),
+      // Invisible entry points for scrapers that ignore robots.txt / Terms.
+      bait.trap_links(),
     ]),
   ])
 }
