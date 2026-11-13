@@ -35,7 +35,7 @@ layout opts page =
                 { title = ogTitle
                 , description = opts.description
                 , url = SiteMeta.absoluteUrl (opts.path)
-                , image = Just SiteMeta.imageUrl
+                , image = Nothing
                 , siteName = Just SiteMeta.siteName
                 , type_ = opts.type_
                 }

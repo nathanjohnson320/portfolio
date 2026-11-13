@@ -1,4 +1,4 @@
-module SiteMeta exposing (absoluteUrl, baseUrl, defaultDescription, imageUrl, siteName)
+module SiteMeta exposing (absoluteUrl, baseUrl, defaultDescription, siteName)
 
 {-| Absolute URLs and branding for Open Graph / RSS.
 -}
@@ -18,12 +18,6 @@ siteName =
 defaultDescription : String
 defaultDescription =
     "Software engineer, entrepreneur, and professional artist based in Tallinn, Estonia."
-
-{-| Default social preview image (from `static/img/portrait.jpg`).
--}
-imageUrl : String
-imageUrl =
-    baseUrl ++ "/img/portrait.jpg"
 
 {-| Turn an export path (`articles/foo.html`) into a public absolute URL.
 -}
