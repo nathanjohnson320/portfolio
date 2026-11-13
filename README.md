@@ -1,20 +1,12 @@
 # Portfolio + Blog
 
-Static site built with [Selm](https://github.com/nathanjohnson320/selm) (BEAM Html SSR + `selm export`), deployed to Cloudflare.
-
-This branch (`selm-poc`) ports the Gleam + Lustre SSG site to Selm to exercise basic Gleam use cases: multi-page static export, markdown articles, and shared layout.
+Static site built with [Selm](https://selm.nathanjohnson320.workers.dev/) (BEAM Html SSR + `selm export`), deployed to Cloudflare.
 
 ## Prerequisites
 
 - Erlang/OTP **29** (see [`.tool-versions`](.tool-versions))
 - [Wrangler](https://developers.cloudflare.com/workers/wrangler/install-and-update/) on `PATH` (for `selm deploy`)
-- A local **release** build of the Selm CLI:
-
-```bash
-cd /path/to/selm
-cargo build --release -p selm --bin selm
-export PATH="$PWD/target/release:$PATH"
-```
+- The Selm CLI on `PATH` — see the [quick start](https://selm.nathanjohnson320.workers.dev/docs/quick-start)
 
 ## Getting started
 
