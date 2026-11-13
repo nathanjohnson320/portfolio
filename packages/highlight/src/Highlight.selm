@@ -1,0 +1,415 @@
+module Highlight exposing (selm)
+
+{-| Lightweight Selm / Elm syntax highlighter for documentation SSR.
+Produces `<span class="tok-*">` nodes. No client JS required.
+-}
+
+import Html exposing (Html)
+import Html.Attributes as Attr
+import List
+import String
+
+type Kind
+    = Plain
+    | Keyword
+    | TypeName
+    | Ident
+    | StringLit
+    | Number
+    | Comment
+    | Operator
+    | Punct
+
+type alias Token =
+    { kind : Kind
+    , text : String
+    }
+
+type alias Scan =
+    { text : String
+    , rest : String
+    }
+
+{-| Tokenize `source` as Selm/Elm (also tolerates shell `#` comments and TOML-ish punctuation).
+-}
+selm : String -> List (Html msg)
+selm source =
+    List.map render (tokenize source [])
+
+render : Token -> Html msg
+render token =
+    let
+        text =
+            token.text
+    in
+    case token.kind of
+        Plain ->
+            Html.text text
+
+        Keyword ->
+            Html.span [ Attr.class "tok-kw" ] [ Html.text text ]
+
+        TypeName ->
+            Html.span [ Attr.class "tok-type" ] [ Html.text text ]
+
+        Ident ->
+            Html.span [ Attr.class "tok-ident" ] [ Html.text text ]
+
+        StringLit ->
+            Html.span [ Attr.class "tok-str" ] [ Html.text text ]
+
+        Number ->
+            Html.span [ Attr.class "tok-num" ] [ Html.text text ]
+
+        Comment ->
+            Html.span [ Attr.class "tok-com" ] [ Html.text text ]
+
+        Operator ->
+            Html.span [ Attr.class "tok-op" ] [ Html.text text ]
+
+        Punct ->
+            Html.span [ Attr.class "tok-punct" ] [ Html.text text ]
+
+tokenize : String -> List Token -> List Token
+tokenize source acc =
+    if String.isEmpty source then
+        List.reverse acc
+
+    else if String.startsWith "--" source then
+        let
+            scan =
+                takeLine source
+        in
+        tokenize (scan.rest) ({ kind = Comment, text = scan.text } :: acc)
+
+    else if String.startsWith "#" source then
+        let
+            scan =
+                takeLine source
+        in
+        tokenize (scan.rest) ({ kind = Comment, text = scan.text } :: acc)
+
+    else if String.startsWith "{-" source then
+        let
+            scan =
+                takeBlockComment source
+        in
+        tokenize (scan.rest) ({ kind = Comment, text = scan.text } :: acc)
+
+    else if String.startsWith "\"" source then
+        let
+            scan =
+                takeString source
+        in
+        tokenize (scan.rest) ({ kind = StringLit, text = scan.text } :: acc)
+
+    else if String.startsWith "'" source then
+        let
+            scan =
+                takeCharLit source
+        in
+        tokenize (scan.rest) ({ kind = StringLit, text = scan.text } :: acc)
+
+    else
+        let
+            ch =
+                String.left 1 source
+
+            rest =
+                String.dropLeft 1 source
+        in
+        if isSpace ch then
+            let
+                scan =
+                    takeSpaces source
+            in
+            tokenize (scan.rest) ({ kind = Plain, text = scan.text } :: acc)
+
+        else if isIdentStart ch then
+            let
+                scan =
+                    takeIdent source
+            in
+            tokenize (scan.rest) ({ kind = identKind (scan.text), text = scan.text } :: acc)
+
+        else if isDigit ch then
+            let
+                scan =
+                    takeNumber source
+            in
+            tokenize (scan.rest) ({ kind = Number, text = scan.text } :: acc)
+
+        else
+            case takeOperator source of
+                Just scan ->
+                    tokenize (scan.rest) ({ kind = Operator, text = scan.text } :: acc)
+
+                Nothing ->
+                    tokenize rest ({ kind = Punct, text = ch } :: acc)
+
+identKind : String -> Kind
+identKind name =
+    if isKeyword name then
+        Keyword
+
+    else if startsUpper name then
+        TypeName
+
+    else
+        Ident
+
+isKeyword : String -> Bool
+isKeyword name =
+    List.member name
+        [ "alias"
+        , "as"
+        , "case"
+        , "database"
+        , "else"
+        , "elixir"
+        , "erlang"
+        , "exposing"
+        , "if"
+        , "import"
+        , "in"
+        , "let"
+        , "migration"
+        , "module"
+        , "of"
+        , "port"
+        , "then"
+        , "type"
+        ]
+
+startsUpper : String -> Bool
+startsUpper name =
+    isUpper (String.left 1 name)
+
+takeOperator : String -> Maybe Scan
+takeOperator source =
+    longestPrefix source
+        [ ":="
+        , "->"
+        , "<-"
+        , "|>"
+        , "<|"
+        , ">>"
+        , "<<"
+        , "::"
+        , "++"
+        , "=="
+        , "/="
+        , "<="
+        , ">="
+        , "&&"
+        , "||"
+        , "//"
+        , "\\"
+        , "|"
+        , "="
+        , ":"
+        , "+"
+        , "-"
+        , "*"
+        , "/"
+        , "^"
+        , "<"
+        , ">"
+        , "."
+        ]
+
+longestPrefix : String -> List String -> Maybe Scan
+longestPrefix source ops =
+    case List.head ops of
+        Nothing ->
+            Nothing
+
+        Just op ->
+            if String.startsWith op source then
+                Just { text = op, rest = String.dropLeft (String.length op) source }
+
+            else
+                longestPrefix source (List.drop 1 ops)
+
+takeLine : String -> Scan
+takeLine source =
+    takeUntilNewline "" source
+
+takeUntilNewline : String -> String -> Scan
+takeUntilNewline acc source =
+    let
+        ch =
+            String.left 1 source
+    in
+    if String.isEmpty source then
+        { text = acc, rest = source }
+
+    else if ch == "\n" || ch == "\r" then
+        { text = acc, rest = source }
+
+    else
+        takeUntilNewline (String.append acc ch) (String.dropLeft 1 source)
+
+takeBlockComment : String -> Scan
+takeBlockComment source =
+    let
+        scan =
+            takeBlockCommentBody (String.dropLeft 2 source) 1
+    in
+    { text = String.append "{-" (scan.text), rest = scan.rest }
+
+takeBlockCommentBody : String -> Int -> Scan
+takeBlockCommentBody source depth =
+    if String.isEmpty source then
+        { text = "", rest = "" }
+
+    else if String.startsWith "-}" source then
+        if depth == 1 then
+            { text = "-}", rest = String.dropLeft 2 source }
+
+        else
+            let
+                scan =
+                    takeBlockCommentBody (String.dropLeft 2 source) (depth - 1)
+            in
+            { text = String.append "-}" (scan.text), rest = scan.rest }
+
+    else if String.startsWith "{-" source then
+        let
+            scan =
+                takeBlockCommentBody (String.dropLeft 2 source) (depth + 1)
+        in
+        { text = String.append "{-" (scan.text), rest = scan.rest }
+
+    else
+        let
+            ch =
+                String.left 1 source
+
+            scan =
+                takeBlockCommentBody (String.dropLeft 1 source) depth
+        in
+        { text = String.append ch (scan.text), rest = scan.rest }
+
+takeString : String -> Scan
+takeString source =
+    takeStringBody "\"" (String.dropLeft 1 source)
+
+takeStringBody : String -> String -> Scan
+takeStringBody acc source =
+    if String.isEmpty source then
+        { text = acc, rest = "" }
+
+    else if String.startsWith "\"" source then
+        { text = String.append acc "\"", rest = String.dropLeft 1 source }
+
+    else if String.startsWith "\\" source then
+        let
+            escape =
+                String.left 2 source
+        in
+        if String.length escape == 2 then
+            takeStringBody (String.append acc escape) (String.dropLeft 2 source)
+
+        else
+            { text = String.append acc escape, rest = "" }
+
+    else
+        takeStringBody (String.append acc (String.left 1 source)) (String.dropLeft 1 source)
+
+takeCharLit : String -> Scan
+takeCharLit source =
+    if String.startsWith "'\\" source then
+        { text = String.left 4 source, rest = String.dropLeft 4 source }
+
+    else
+        { text = String.left 3 source, rest = String.dropLeft 3 source }
+
+takeSpaces : String -> Scan
+takeSpaces source =
+    takeSpacesHelp "" source
+
+takeSpacesHelp : String -> String -> Scan
+takeSpacesHelp acc source =
+    let
+        ch =
+            String.left 1 source
+    in
+    if String.isEmpty source then
+        { text = acc, rest = source }
+
+    else if isSpace ch then
+        takeSpacesHelp (String.append acc ch) (String.dropLeft 1 source)
+
+    else
+        { text = acc, rest = source }
+
+takeIdent : String -> Scan
+takeIdent source =
+    takeIdentHelp "" source
+
+takeIdentHelp : String -> String -> Scan
+takeIdentHelp acc source =
+    let
+        ch =
+            String.left 1 source
+    in
+    if String.isEmpty source then
+        { text = acc, rest = source }
+
+    else if isIdentCont ch then
+        takeIdentHelp (String.append acc ch) (String.dropLeft 1 source)
+
+    else
+        { text = acc, rest = source }
+
+takeNumber : String -> Scan
+takeNumber source =
+    takeNumberHelp "" source
+
+takeNumberHelp : String -> String -> Scan
+takeNumberHelp acc source =
+    let
+        ch =
+            String.left 1 source
+    in
+    if String.isEmpty source then
+        { text = acc, rest = source }
+
+    else if isNumberCont ch then
+        takeNumberHelp (String.append acc ch) (String.dropLeft 1 source)
+
+    else
+        { text = acc, rest = source }
+
+isSpace : String -> Bool
+isSpace ch =
+    ch == " " || ch == "\t" || ch == "\n" || ch == "\r"
+
+isIdentStart : String -> Bool
+isIdentStart ch =
+    isLetter ch || ch == "_"
+
+isIdentCont : String -> Bool
+isIdentCont ch =
+    isLetter ch || isDigit ch || ch == "_"
+
+isNumberCont : String -> Bool
+isNumberCont ch =
+    isDigit ch || ch == "." || ch == "_"
+
+isLetter : String -> Bool
+isLetter ch =
+    isLower ch || isUpper ch
+
+isLower : String -> Bool
+isLower ch =
+    String.contains ch "abcdefghijklmnopqrstuvwxyz"
+
+isUpper : String -> Bool
+isUpper ch =
+    String.contains ch "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+isDigit : String -> Bool
+isDigit ch =
+    String.contains ch "0123456789"

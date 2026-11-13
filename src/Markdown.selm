@@ -1,10 +1,12 @@
 module Markdown exposing (frontmatter, stripFrontmatter, toHtml)
 
 {-| Minimal markdown for portfolio articles: frontmatter strip, ATX headings,
-paragraphs, fenced code, lists, images, inline code and links.
+paragraphs, fenced code, lists (code fences nest under the preceding item),
+images, inline code and links.
 -}
 
 import Char
+import Highlight
 import Html exposing (Html)
 import Html.Attributes as Attr
 import String
@@ -111,7 +113,7 @@ blocks lines acc =
                     taken =
                         takeFence rest []
                 in
-                blocks taken.rest (codeBlock taken.code :: acc)
+                blocks taken.rest (codeBlock (fenceLang trimmed) taken.code :: acc)
 
             else if isAtxHeading trimmed then
                 blocks rest (headingHtml trimmed :: acc)
@@ -145,6 +147,7 @@ isAtxHeading trimmed =
     String.startsWith "# " trimmed
         || String.startsWith "## " trimmed
         || String.startsWith "### " trimmed
+        || String.startsWith "#### " trimmed
 
 headingHtml : String -> Html msg
 headingHtml trimmed =
@@ -161,12 +164,18 @@ headingHtml trimmed =
     else if level == 2 then
         Html.h2 [] [ Html.text text ]
 
-    else
+    else if level == 3 then
         Html.h3 [] [ Html.text text ]
+
+    else
+        Html.h4 [] [ Html.text text ]
 
 headingLevel : String -> Int
 headingLevel trimmed =
-    if String.startsWith "### " trimmed then
+    if String.startsWith "#### " trimmed then
+        4
+
+    else if String.startsWith "### " trimmed then
         3
 
     else if String.startsWith "## " trimmed then
@@ -177,7 +186,10 @@ headingLevel trimmed =
 
 headingText : String -> String
 headingText trimmed =
-    if String.startsWith "### " trimmed then
+    if String.startsWith "#### " trimmed then
+        String.dropLeft 5 trimmed
+
+    else if String.startsWith "### " trimmed then
         String.dropLeft 4 trimmed
 
     else if String.startsWith "## " trimmed then
@@ -277,6 +289,42 @@ type alias ListTaken msg =
     , rest : List String
     }
 
+type alias ListItemBody msg =
+    { content : List (Html msg)
+    , rest : List String
+    }
+
+isFence : String -> Bool
+isFence trimmed =
+    trimmed == fence || String.startsWith fence trimmed
+
+isListItem : String -> Bool -> Bool
+isListItem trimmed ordered =
+    if ordered then
+        isOrderedItem trimmed
+
+    else
+        isUnorderedItem trimmed
+
+{-| Next non-blank trimmed line, if any.
+-}
+peekNonBlank : List String -> Maybe String
+peekNonBlank lines =
+    case lines of
+        [] ->
+            Nothing
+
+        line :: rest ->
+            let
+                trimmed =
+                    String.trim line
+            in
+            if trimmed == "" then
+                peekNonBlank rest
+
+            else
+                Just trimmed
+
 takeList : List String -> Bool -> List (Html msg) -> ListTaken msg
 takeList lines ordered acc =
     case lines of
@@ -287,28 +335,98 @@ takeList lines ordered acc =
             let
                 trimmed =
                     String.trim line
-
-                match =
-                    if ordered then
-                        isOrderedItem trimmed
-
-                    else
-                        isUnorderedItem trimmed
             in
-            if match then
-                takeList rest
+            if isListItem trimmed ordered then
+                let
+                    taken =
+                        takeListItemBody rest []
+                in
+                takeList taken.rest
                     ordered
-                    (Html.li [] (inline (listItemText trimmed)) :: acc)
+                    (Html.li []
+                        (inline (listItemText trimmed) ++ List.reverse taken.content)
+                        :: acc
+                    )
 
             else if trimmed == "" then
-                { items = acc, rest = rest }
+                case peekNonBlank rest of
+                    Just next ->
+                        if isListItem next ordered then
+                            takeList rest ordered acc
+
+                        else
+                            { items = acc, rest = rest }
+
+                    Nothing ->
+                        { items = acc, rest = rest }
 
             else
                 { items = acc, rest = lines }
 
-codeBlock : String -> Html msg
-codeBlock source =
-    Html.pre [] [ Html.code [] [ Html.text source ] ]
+{-| Fenced code (and blank lines before it) belonging to the current list item.
+Stops before the next sibling item, heading, or other block-level content.
+-}
+takeListItemBody : List String -> List (Html msg) -> ListItemBody msg
+takeListItemBody lines contentAcc =
+    case lines of
+        [] ->
+            { content = contentAcc, rest = [] }
+
+        line :: rest ->
+            let
+                trimmed =
+                    String.trim line
+            in
+            if trimmed == "" then
+                case peekNonBlank rest of
+                    Just next ->
+                        if isFence next then
+                            takeListItemBody rest contentAcc
+
+                        else
+                            { content = contentAcc, rest = lines }
+
+                    Nothing ->
+                        { content = contentAcc, rest = rest }
+
+            else if isFence trimmed then
+                let
+                    taken =
+                        takeFence rest []
+                in
+                takeListItemBody taken.rest
+                    (codeBlock (fenceLang trimmed) taken.code :: contentAcc)
+
+            else
+                { content = contentAcc, rest = lines }
+
+fenceLang : String -> String
+fenceLang trimmed =
+    case
+        String.words (String.trim (String.dropLeft (String.length fence) trimmed))
+    of
+        first :: _ ->
+            first
+
+        [] ->
+            ""
+
+codeBlock : String -> String -> Html msg
+codeBlock lang source =
+    Html.pre [ Attr.class "code-block" ]
+        [ Html.code [] (highlightLang lang source) ]
+
+highlightLang : String -> String -> List (Html msg)
+highlightLang lang source =
+    let
+        normalized =
+            String.toLower lang
+    in
+    if normalized == "selm" || normalized == "elm" then
+        Highlight.selm source
+
+    else
+        [ Html.text source ]
 
 -- INLINE
 

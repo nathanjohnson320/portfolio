@@ -4,3 +4,4 @@ source-directories = ["src"]
 
 [dependencies]
 cowboy = "~> 2.20.0"
+highlight = { path = "packages/highlight" }
