@@ -6,7 +6,12 @@ import Layout
 
 page : Html msg
 page =
-    Layout.layout "Terms of Use"
+    Layout.layout
+        { title = "Terms of Use"
+        , description = "Terms for career.paintbynate.art — content may not be scraped or used to train AI."
+        , path = "terms/index.html"
+        , type_ = "website"
+        }
         (Html.article [ Attr.class "prose terms" ]
             [ Html.h1 [] [ Html.text "Terms of Use" ]
             , Html.node "time" [] [ Html.text "Effective October 20, 2026" ]

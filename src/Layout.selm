@@ -1,48 +1,85 @@
 module Layout exposing (layout, pageHeading)
 
-{-| Shared page chrome: stylesheet, site header, footer.
+{-| Shared page chrome: stylesheet, site header, footer, Open Graph, RSS link.
 -}
 
 import Html exposing (Html)
 import Html.Attributes as Attr
 import Html.Document as Doc
+import List
+import OpenGraph
+import SiteMeta
 
-layout : String -> Html msg -> Html msg
-layout pageTitle page =
+type alias Options =
+    { title : String
+    , description : String
+    , path : String
+    , type_ : String
+    }
+
+layout : Options -> Html msg -> Html msg
+layout opts page =
+    let
+        pageTitle =
+            formatTitle (opts.title)
+
+        ogTitle =
+            if opts.title == "" then
+                SiteMeta.siteName
+
+            else
+                opts.title
+
+        social =
+            OpenGraph.tags
+                { title = ogTitle
+                , description = opts.description
+                , url = SiteMeta.absoluteUrl (opts.path)
+                , image = Just SiteMeta.imageUrl
+                , siteName = Just SiteMeta.siteName
+                , type_ = opts.type_
+                }
+    in
     Doc.html []
         [ Doc.head []
-            [ Doc.meta [ Attr.charset "utf-8" ] []
-            , Doc.meta
-                [ Attr.name "viewport"
-                , Attr.content "width=device-width, initial-scale=1"
+            (List.concat
+                [ [ Doc.meta [ Attr.charset "utf-8" ] []
+                  , Doc.meta
+                        [ Attr.name "viewport"
+                        , Attr.content "width=device-width, initial-scale=1"
+                        ]
+                        []
+                  , Doc.meta
+                        [ Attr.name "robots"
+                        , Attr.content "max-image-preview:large, noai, noimageai"
+                        ]
+                        []
+                  , Doc.meta [ Attr.name "googlebot", Attr.content "noai, noimageai" ] []
+                  , Doc.meta
+                        [ Attr.name "google-extended"
+                        , Attr.content "nosnippet, noai"
+                        ]
+                        []
+                  , Doc.meta [ Attr.name "ai", Attr.content "notrain, noindex" ] []
+                  ]
+                , social
+                , [ Doc.link
+                        [ Attr.rel "alternate"
+                        , Attr.attribute "type" "application/rss+xml"
+                        , Attr.title "Nathan Johnson"
+                        , Attr.href "/feed.xml"
+                        ]
+                        []
+                  , Doc.link
+                        [ Attr.rel "stylesheet", Attr.href "/styles.css" ]
+                        []
+                  , Doc.link
+                        [ Attr.rel "icon", Attr.href "/favicon.ico" ]
+                        []
+                  , Doc.title [] [ Html.text pageTitle ]
+                  ]
                 ]
-                []
-            , Doc.meta
-                [ Attr.name "robots"
-                , Attr.content "max-image-preview:large, noai, noimageai"
-                ]
-                []
-            , Doc.meta [ Attr.name "googlebot", Attr.content "noai, noimageai" ] []
-            , Doc.meta
-                [ Attr.name "google-extended"
-                , Attr.content "nosnippet, noai"
-                ]
-                []
-            , Doc.meta [ Attr.name "ai", Attr.content "notrain, noindex" ] []
-            , Doc.meta
-                [ Attr.name "description"
-                , Attr.content
-                    "Personal site of Nathan Johnson. Content may not be scraped or used to train AI systems. See /terms."
-                ]
-                []
-            , Doc.link
-                [ Attr.rel "stylesheet", Attr.href "/styles.css" ]
-                []
-            , Doc.link
-                [ Attr.rel "icon", Attr.href "/favicon.ico" ]
-                []
-            , Doc.title [] [ Html.text (formatTitle pageTitle) ]
-            ]
+            )
         , Doc.body []
             [ Html.header [ Attr.class "site-header" ]
                 [ Html.div [ Attr.class "container header-inner" ]
@@ -65,6 +102,8 @@ layout pageTitle page =
                     [ Html.p []
                         [ Html.text "© Nathan Johnson. "
                         , Html.a [ Attr.href "/" ] [ Html.text "Home" ]
+                        , Html.text " · "
+                        , Html.a [ Attr.href "/feed.xml" ] [ Html.text "RSS" ]
                         , Html.text " · "
                         , Html.a [ Attr.href "/terms" ] [ Html.text "Terms" ]
                         , Html.text " — content may not be used to train AI."

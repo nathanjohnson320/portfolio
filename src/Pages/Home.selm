@@ -5,6 +5,7 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Layout
 import List
+import SiteMeta
 
 page : List Article -> Html msg
 page articles =
@@ -12,7 +13,12 @@ page articles =
         latest =
             List.take 4 articles
     in
-    Layout.layout ""
+    Layout.layout
+        { title = ""
+        , description = SiteMeta.defaultDescription
+        , path = "index.html"
+        , type_ = "website"
+        }
         (Html.div []
             [ Html.div [ Attr.class "hero" ]
                 [ Html.h1 []

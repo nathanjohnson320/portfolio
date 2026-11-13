@@ -55,7 +55,12 @@ page =
               }
             ]
     in
-    Layout.layout "Projects"
+    Layout.layout
+        { title = "Projects"
+        , description = "Public open-source projects I've worked on over the years."
+        , path = "projects/index.html"
+        , type_ = "website"
+        }
         (Html.div []
             [ Layout.pageHeading
                 "Public projects I've worked on over the years."

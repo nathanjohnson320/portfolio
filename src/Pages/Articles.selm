@@ -8,7 +8,12 @@ import List
 
 page : List Article -> Html msg
 page articles =
-    Layout.layout "Articles"
+    Layout.layout
+        { title = "Articles"
+        , description = "All of my long-form thoughts on programming, oil painting, and career, collected in chronological order."
+        , path = "articles/index.html"
+        , type_ = "website"
+        }
         (Html.div []
             [ Layout.pageHeading
                 "Writing on software, art, and everything in between."

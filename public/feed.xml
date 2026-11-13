@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Nathan Johnson</title>
+    <link>https://career.paintbynate.art/</link>
+    <description>Software engineer, entrepreneur, and professional artist based in Tallinn, Estonia.</description>
+    <language>en</language>
+    <item>
+      <title>Introducing selm</title>
+      <link>https://career.paintbynate.art/articles/2026-11-13-introducing-selm</link>
+      <guid>https://career.paintbynate.art/articles/2026-11-13-introducing-selm</guid>
+      <description>Write one familiar language. Compile it to JavaScript for interactive apps, to Erlang for servers, databases, and HTML on the BEAM, or to AtomVM for microcontrollers. Start small, then grow into full-stack.</description>
+      <pubDate>13 Nov 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Knowing When to Leave</title>
+      <link>https://career.paintbynate.art/articles/2026-11-11-knowing-when-to-leave</link>
+      <guid>https://career.paintbynate.art/articles/2026-11-11-knowing-when-to-leave</guid>
+      <description>At some point you know it&apos;s time to move on from your current work to something else</description>
+      <pubDate>11 Nov 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Punching Above Your Weight</title>
+      <link>https://career.paintbynate.art/articles/2026-11-04-punching-above-your-weight</link>
+      <guid>https://career.paintbynate.art/articles/2026-11-04-punching-above-your-weight</guid>
+      <description>Why do we care, cognitive offloading, and why engineering culture is dying</description>
+      <pubDate>04 Nov 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Refreshed Hatred</title>
+      <link>https://career.paintbynate.art/articles/2026-10-30-refreshed-hatred</link>
+      <guid>https://career.paintbynate.art/articles/2026-10-30-refreshed-hatred</guid>
+      <description>Back from vacation and full of thoughts</description>
+      <pubDate>30 Oct 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Simple Concurrency</title>
+      <link>https://career.paintbynate.art/articles/2026-10-13-simple-concurrency</link>
+      <guid>https://career.paintbynate.art/articles/2026-10-13-simple-concurrency</guid>
+      <description>Random concurrency tip that I use pretty frequently at my jobs</description>
+      <pubDate>13 Oct 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>My First Elixir App</title>
+      <link>https://career.paintbynate.art/articles/2026-10-11-first-elixir-app</link>
+      <guid>https://career.paintbynate.art/articles/2026-10-11-first-elixir-app</guid>
+      <description>Reminiscing on my first production elixir app.</description>
+      <pubDate>11 Oct 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>State of the Programming Union</title>
+      <link>https://career.paintbynate.art/articles/2026-10-05-state-of-the-programming-union</link>
+      <guid>https://career.paintbynate.art/articles/2026-10-05-state-of-the-programming-union</guid>
+      <description>What is happening?</description>
+      <pubDate>05 Oct 2026 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Selling Paintings</title>
+      <link>https://career.paintbynate.art/articles/2024-07-24-selling-paintings</link>
+      <guid>https://career.paintbynate.art/articles/2024-07-24-selling-paintings</guid>
+      <description>One quick thing I learned about selling paintings.</description>
+      <pubDate>24 Jul 2024 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>State of the Tech Market</title>
+      <link>https://career.paintbynate.art/articles/2024-07-13-state-of-the-tech-market</link>
+      <guid>https://career.paintbynate.art/articles/2024-07-13-state-of-the-tech-market</guid>
+      <description>Here are some observations on the current state of the tech market and where it might be headed in the future.</description>
+      <pubDate>13 Jul 2024 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>When Elixir Makes Sense</title>
+      <link>https://career.paintbynate.art/articles/2024-07-01-when-elixir-makes-sense</link>
+      <guid>https://career.paintbynate.art/articles/2024-07-01-when-elixir-makes-sense</guid>
+      <description>Elixir is a powerful language, but it&apos;s not always the right choice for every project. Here are some situations where Elixir really shines and some where it might not be the best fit.</description>
+      <pubDate>01 Jul 2024 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Dealing with Kafka Consumer Lag</title>
+      <link>https://career.paintbynate.art/articles/2024-06-08-dealing-with-kafka-lag</link>
+      <guid>https://career.paintbynate.art/articles/2024-06-08-dealing-with-kafka-lag</guid>
+      <description>Sometimes your Kafka consumers can&apos;t keep up with the producer. Here&apos;s how I dealt with that issue recently.</description>
+      <pubDate>08 Jun 2024 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Deploy Elixir Phoenix App with Heroku Containers</title>
+      <link>https://career.paintbynate.art/articles/2022-12-20-deploy-elixir-phoenix-app-with-heroku-containers</link>
+      <guid>https://career.paintbynate.art/articles/2022-12-20-deploy-elixir-phoenix-app-with-heroku-containers</guid>
+      <description>Step by step guide for taking a mix phx.new app and turning it into a dockerized mix release app.</description>
+      <pubDate>20 Dec 2022 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>remix.run + cloudflare workers + supabase + tailwind</title>
+      <link>https://career.paintbynate.art/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind</link>
+      <guid>https://career.paintbynate.art/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind</guid>
+      <description>A quick guide on how to use remix.run with cloudflare workers, supabase, and tailwindcss.</description>
+      <pubDate>18 Jan 2022 00:00:00 GMT</pubDate>
+    </item>
+    <item>
+      <title>Building a Terminal Internet Radio Player</title>
+      <link>https://career.paintbynate.art/articles/2020-10-01-building-a-terminal-internet-radio-player</link>
+      <guid>https://career.paintbynate.art/articles/2020-10-01-building-a-terminal-internet-radio-player</guid>
+      <description>Leveraging ink.js and various media libraries you can play internet radio via your terminal!</description>
+      <pubDate>01 Oct 2020 00:00:00 GMT</pubDate>
+    </item>
+  </channel>
+</rss>

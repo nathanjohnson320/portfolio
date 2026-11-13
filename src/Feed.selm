@@ -1,0 +1,95 @@
+module Feed exposing (xml)
+
+{-| RSS feed for articles.
+-}
+
+import ArticlesData exposing (Article)
+import Generated.Articles as Articles
+import List
+import Rss
+import SiteMeta
+import String
+
+xml : String
+xml =
+    Rss.feed
+        { title = "Nathan Johnson"
+        , link = SiteMeta.baseUrl ++ "/"
+        , description = SiteMeta.defaultDescription
+        , language = Just "en"
+        , items = List.map toItem Articles.all
+        }
+
+toItem : Article -> Rss.Item
+toItem post =
+    { title = post.title
+    , link = SiteMeta.absoluteUrl ("articles/" ++ post.id ++ ".html")
+    , description = post.description
+    , pubDate = Just (rfc822Date post.date)
+    }
+
+{-| ISO `YYYY-MM-DD` → RFC 822 date (weekday omitted; allowed by the grammar).
+-}
+rfc822Date : String -> String
+rfc822Date date =
+    case String.split "-" date of
+        year :: month :: day :: [] ->
+            case String.toInt day of
+                Just d ->
+                    pad2 d ++ " " ++ monthAbbr month ++ " " ++ year ++ " 00:00:00 GMT"
+
+                Nothing ->
+                    date
+
+        _ ->
+            date
+
+pad2 : Int -> String
+pad2 n =
+    if n < 10 then
+        "0" ++ String.fromInt n
+
+    else
+        String.fromInt n
+
+monthAbbr : String -> String
+monthAbbr month =
+    case String.toInt month of
+        Just 1 ->
+            "Jan"
+
+        Just 2 ->
+            "Feb"
+
+        Just 3 ->
+            "Mar"
+
+        Just 4 ->
+            "Apr"
+
+        Just 5 ->
+            "May"
+
+        Just 6 ->
+            "Jun"
+
+        Just 7 ->
+            "Jul"
+
+        Just 8 ->
+            "Aug"
+
+        Just 9 ->
+            "Sep"
+
+        Just 10 ->
+            "Oct"
+
+        Just 11 ->
+            "Nov"
+
+        Just 12 ->
+            "Dec"
+
+        _ ->
+            month

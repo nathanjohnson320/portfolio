@@ -27,6 +27,7 @@ import Server.Route as Route exposing
     , top
     , (</>)
     )
+import Site
 import String
 
 main : Server
@@ -42,6 +43,7 @@ type Page
     | Uses
     | Terms
     | Styles
+    | Feed
     | BadMethod
     | Missing
 
@@ -56,6 +58,7 @@ routes =
         , map Uses (get (s "uses"))
         , map Terms (get (s "terms"))
         , map Styles (get (s "styles.css"))
+        , map Feed (get (s "feed.xml"))
         ]
         |> methodNotAllowed BadMethod
         |> notFound Missing
@@ -105,11 +108,33 @@ handle req =
         Styles ->
             Server.string 200 [] "text/css; charset=utf-8" Styles.css
 
+        Feed ->
+            case findFile "feed.xml" Site.files of
+                Just body ->
+                    Server.string 200 [] "application/rss+xml; charset=utf-8" body
+
+                Nothing ->
+                    Server.empty 404 []
+
         BadMethod ->
             Server.empty 405 []
 
         Missing ->
             Server.static "static" path
+
+findFile : String -> List { path : String, body : () -> String } -> Maybe String
+findFile name list =
+    case list of
+        [] ->
+            Nothing
+
+        file :: rest ->
+            if file.path == name then
+                Just ((file.body) ())
+
+            else
+                findFile name rest
+
 
 normalize : String -> String
 normalize url =

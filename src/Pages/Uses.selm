@@ -54,7 +54,12 @@ page =
               }
             ]
     in
-    Layout.layout "Uses"
+    Layout.layout
+        { title = "Uses"
+        , description = "Tools I use to build software, stay productive, or just enjoy."
+        , path = "uses/index.html"
+        , type_ = "website"
+        }
         (Html.div []
             [ Layout.pageHeading
                 "Tools that I use to build software, stay productive, or just enjoy in general."

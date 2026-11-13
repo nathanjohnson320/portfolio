@@ -1,8 +1,9 @@
-module Site exposing (pages)
+module Site exposing (files, pages)
 
 {-| Static site page list for `selm export`. Bodies are thunks so pages render one at a time.
 -}
 
+import Feed
 import Generated.Articles as Articles
 import Html exposing (Html)
 import List
@@ -36,3 +37,9 @@ pages =
             )
             articles
         ]
+
+{-| Raw text files written beside HTML pages (no document wrapper).
+-}
+files : List { path : String, body : () -> String }
+files =
+    [ { path = "feed.xml", body = \_ -> Feed.xml } ]

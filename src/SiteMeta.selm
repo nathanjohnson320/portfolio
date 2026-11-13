@@ -1,0 +1,57 @@
+module SiteMeta exposing (absoluteUrl, baseUrl, defaultDescription, imageUrl, siteName)
+
+{-| Absolute URLs and branding for Open Graph / RSS.
+-}
+
+import String
+
+{-| Public origin for the deployed site (no trailing slash).
+-}
+baseUrl : String
+baseUrl =
+    "https://career.paintbynate.art"
+
+siteName : String
+siteName =
+    "Nathan Johnson"
+
+defaultDescription : String
+defaultDescription =
+    "Software engineer, entrepreneur, and professional artist based in Tallinn, Estonia."
+
+{-| Default social preview image (from `static/img/portrait.jpg`).
+-}
+imageUrl : String
+imageUrl =
+    baseUrl ++ "/img/portrait.jpg"
+
+{-| Turn an export path (`articles/foo.html`) into a public absolute URL.
+-}
+absoluteUrl : String -> String
+absoluteUrl path =
+    let
+        trimmed =
+            if String.startsWith "/" path then
+                String.dropLeft 1 path
+
+            else
+                path
+
+        pretty =
+            if trimmed == "index.html" then
+                ""
+
+            else if String.endsWith "/index.html" trimmed then
+                String.dropRight (String.length "/index.html") trimmed ++ "/"
+
+            else if String.endsWith ".html" trimmed then
+                String.dropRight 5 trimmed
+
+            else
+                trimmed
+    in
+    if pretty == "" then
+        baseUrl ++ "/"
+
+    else
+        baseUrl ++ "/" ++ pretty

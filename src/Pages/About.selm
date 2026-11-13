@@ -7,7 +7,12 @@ import String
 
 page : Html msg
 page =
-    Layout.layout "About"
+    Layout.layout
+        { title = "About"
+        , description = "I'm Nathan Johnson. Software engineer and oil painter based in Tallinn, Estonia."
+        , path = "about/index.html"
+        , type_ = "website"
+        }
         (Html.div [ Attr.class "about" ]
             [ Html.img
                 [ Attr.src "/img/portrait.jpg"
