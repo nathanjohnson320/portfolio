@@ -53,7 +53,7 @@ photos =
 photoFrame : String -> Html msg
 photoFrame src =
     Html.div [ Attr.class "photo-frame" ]
-        [ Html.img [ Attr.src src, Attr.alt "", Attr.class "photo" ] ]
+        [ Html.img [ Attr.src src, Attr.alt "", Attr.class "photo" ] [] ]
 
 articleCard : Article -> Html msg
 articleCard item =
@@ -83,7 +83,7 @@ resume =
 role : String -> String -> String -> String -> String -> Html msg
 role company title logo start end =
     Html.li [ Attr.class "role" ]
-        [ Html.img [ Attr.src logo, Attr.alt "", Attr.class "role-logo" ]
+        [ Html.img [ Attr.src logo, Attr.alt "", Attr.class "role-logo" ] []
         , Html.div []
             [ Html.span [ Attr.class "role-company" ] [ Html.text company ]
             , Html.span [ Attr.class "role-title" ] [ Html.text title ]

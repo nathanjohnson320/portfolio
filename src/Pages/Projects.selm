@@ -67,7 +67,7 @@ page =
 projectCard : Project -> Html msg
 projectCard project =
     Html.li [ Attr.class "project-card" ]
-        [ Html.img [ Attr.src project.logo, Attr.alt "", Attr.class "project-logo" ]
+        [ Html.img [ Attr.src project.logo, Attr.alt "", Attr.class "project-logo" ] []
         , Html.h2 [] [ Html.a [ Attr.href project.href ] [ Html.text project.name ] ]
         , Html.p [] [ Html.text project.description ]
         , Html.p [ Attr.class "project-link" ]

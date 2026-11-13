@@ -476,4 +476,4 @@ takeInlineImage afterBang acc =
                             String.dropLeft (srcEnd + 1) afterAlt
                     in
                     inlineHelp rest
-                        (Html.img [ Attr.src src, Attr.alt alt ] :: acc)
+                        (Html.img [ Attr.src src, Attr.alt alt ] [] :: acc)

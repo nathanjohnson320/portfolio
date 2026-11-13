@@ -14,6 +14,7 @@ page =
                 , Attr.alt "Portrait of Nathan Johnson"
                 , Attr.class "portrait"
                 ]
+                []
             , Html.div [ Attr.class "about-copy" ]
                 [ Html.h1 []
                     [ Html.text "I'm Nathan Johnson. Currently working with STORD building out the cloud supply chain and oil painting on my YouTube channel in my free time."
