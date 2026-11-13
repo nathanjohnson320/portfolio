@@ -1,6 +1,6 @@
 target = "erlang"
 
-source-directories = ["src", "cli"]
+source-directories = ["src"]
 
 [dependencies]
 cowboy = "~> 2.20.0"

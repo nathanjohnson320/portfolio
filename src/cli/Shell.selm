@@ -1,0 +1,6 @@
+port module Shell exposing (lines)
+
+{-| Stdout/stderr lines from a spawned OS process (used by CLI.Deploy).
+-}
+
+port lines : (String -> msg) -> Sub msg

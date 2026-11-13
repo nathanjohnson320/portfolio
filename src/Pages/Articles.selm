@@ -6,8 +6,8 @@ import Html.Attributes as Attr
 import Layout
 import List
 
-page : List Article -> Html msg -> Html msg
-page articles traps =
+page : List Article -> Html msg
+page articles =
     Layout.layout "Articles"
         (Html.div []
             [ Layout.pageHeading
@@ -16,7 +16,6 @@ page articles traps =
             , Html.ul [ Attr.class "article-list" ] (List.map articleItem articles)
             ]
         )
-        traps
 
 articleItem : Article -> Html msg
 articleItem item =

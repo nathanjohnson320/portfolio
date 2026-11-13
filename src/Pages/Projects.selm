@@ -13,8 +13,8 @@ type alias Project =
     , logo : String
     }
 
-page : Html msg -> Html msg
-page traps =
+page : Html msg
+page =
     let
         projects =
             [ { name = "GleamHub"
@@ -63,7 +63,6 @@ page traps =
             , Html.ul [ Attr.class "project-grid" ] (List.map projectCard projects)
             ]
         )
-        traps
 
 projectCard : Project -> Html msg
 projectCard project =

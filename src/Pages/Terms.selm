@@ -4,8 +4,8 @@ import Html exposing (Html)
 import Html.Attributes as Attr
 import Layout
 
-page : Html msg -> Html msg
-page traps =
+page : Html msg
+page =
     Layout.layout "Terms of Use"
         (Html.article [ Attr.class "prose terms" ]
             [ Html.h1 [] [ Html.text "Terms of Use" ]
@@ -77,4 +77,3 @@ page traps =
                 ]
             ]
         )
-        traps

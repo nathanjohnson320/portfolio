@@ -6,8 +6,8 @@ import Html.Attributes as Attr
 import Layout
 import Markdown
 
-page : Article -> Html msg -> Html msg
-page post traps =
+page : Article -> Html msg
+page post =
     Layout.layout post.title
         (Html.article [ Attr.class "prose" ]
             [ Html.p [ Attr.class "back" ]
@@ -17,4 +17,3 @@ page post traps =
             , Html.div [ Attr.class "article-body" ] [ Markdown.toHtml post.body ]
             ]
         )
-        traps

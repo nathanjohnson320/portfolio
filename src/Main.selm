@@ -3,34 +3,113 @@ module Main exposing (main)
 {-| Live preview server for the portfolio.
 -}
 
+import ArticlesData exposing (Article)
+import Generated.Articles as Articles
 import Generated.Styles as Styles
-import Html exposing (Html)
+import List
+import Pages.About as AboutPage
+import Pages.Article as ArticlePage
+import Pages.Articles as ArticlesPage
+import Pages.Home as HomePage
+import Pages.Projects as ProjectsPage
+import Pages.Terms as TermsPage
+import Pages.Uses as UsesPage
 import Server exposing (Request, Response, Server)
-import Site
+import Server.Route as Route exposing
+    ( Total
+    , get
+    , map
+    , methodNotAllowed
+    , notFound
+    , oneOf
+    , s
+    , string
+    , top
+    , (</>)
+    )
 import String
 
 main : Server
 main =
     Server.serve handle
 
+type Page
+    = Home
+    | About
+    | Articles
+    | Article String
+    | Projects
+    | Uses
+    | Terms
+    | Styles
+    | BadMethod
+    | Missing
+
+routes : Total Page
+routes =
+    oneOf
+        [ map Home (get top)
+        , map About (get (s "about"))
+        , map Articles (get (s "articles"))
+        , map Article (get (s "articles" </> string))
+        , map Projects (get (s "projects"))
+        , map Uses (get (s "uses"))
+        , map Terms (get (s "terms"))
+        , map Styles (get (s "styles.css"))
+        ]
+        |> methodNotAllowed BadMethod
+        |> notFound Missing
+
 handle : Request -> Response
 handle req =
-    case req.method of
-        "GET" ->
-            case normalize req.url of
-                "/styles.css" ->
-                    Server.string 200 [] "text/css; charset=utf-8" Styles.css
+    let
+        path =
+            normalize (req.url)
 
-                path ->
-                    case lookup path of
-                        Just view ->
-                            Server.html 200 [] view
+        articles =
+            Articles.all
+    in
+    case
+        Route.parse routes
+            { method = req.method
+            , url = path
+            , headers = []
+            }
+    of
+        Home ->
+            Server.html 200 [] (HomePage.page articles)
 
-                        Nothing ->
-                            Server.static "static" path
+        About ->
+            Server.html 200 [] AboutPage.page
 
-        _ ->
-            Server.empty 404 []
+        Articles ->
+            Server.html 200 [] (ArticlesPage.page articles)
+
+        Article id ->
+            case findArticle (dropHtmlSuffix id) articles of
+                Just post ->
+                    Server.html 200 [] (ArticlePage.page post)
+
+                Nothing ->
+                    Server.empty 404 []
+
+        Projects ->
+            Server.html 200 [] ProjectsPage.page
+
+        Uses ->
+            Server.html 200 [] UsesPage.page
+
+        Terms ->
+            Server.html 200 [] TermsPage.page
+
+        Styles ->
+            Server.string 200 [] "text/css; charset=utf-8" Styles.css
+
+        BadMethod ->
+            Server.empty 405 []
+
+        Missing ->
+            Server.static "static" path
 
 normalize : String -> String
 normalize url =
@@ -40,22 +119,14 @@ normalize url =
     else
         url
 
-lookup : String -> Maybe (Html msg)
-lookup path =
-    findPage (Site.pathFromUrl path) Site.pages
+dropHtmlSuffix : String -> String
+dropHtmlSuffix id =
+    if String.endsWith ".html" id then
+        String.dropRight 5 id
 
-findPage :
-    String
-    -> List { path : String, body : () -> Html msg }
-    -> Maybe (Html msg)
-findPage file list =
-    case list of
-        [] ->
-            Nothing
+    else
+        id
 
-        page :: rest ->
-            if page.path == file then
-                Just (page.body ())
-
-            else
-                findPage file rest
+findArticle : String -> List Article -> Maybe Article
+findArticle id list =
+    List.find (\post -> post.id == id) list

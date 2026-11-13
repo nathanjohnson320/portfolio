@@ -5,8 +5,8 @@ import Html.Attributes as Attr
 import Layout
 import String
 
-page : Html msg -> Html msg
-page traps =
+page : Html msg
+page =
     Layout.layout "About"
         (Html.div [ Attr.class "about" ]
             [ Html.img
@@ -47,7 +47,6 @@ page traps =
                 ]
             ]
         )
-        traps
 
 {-| Approximate whole years from (y,m,d) to a fixed build calendar (2026-11-13).
 -}

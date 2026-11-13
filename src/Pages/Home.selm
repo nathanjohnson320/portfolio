@@ -6,8 +6,8 @@ import Html.Attributes as Attr
 import Layout
 import List
 
-page : List Article -> Html msg -> Html msg
-page articles traps =
+page : List Article -> Html msg
+page articles =
     let
         latest =
             List.take 4 articles
@@ -35,7 +35,6 @@ page articles traps =
                 ]
             ]
         )
-        traps
 
 social : String -> String -> Html msg
 social url label =

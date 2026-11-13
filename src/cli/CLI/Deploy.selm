@@ -1,0 +1,118 @@
+module CLI.Deploy exposing (run)
+
+{-| Generate articles in-process, then export and deploy via OS processes.
+
+    selm deploy
+-}
+
+import CLI.GenerateArticles as GenerateArticles
+import List
+import Logger
+import Platform
+import Platform.Cmd as Cmd exposing (Cmd)
+import Platform.Sub as Sub exposing (Sub)
+import Port
+import Shell exposing (lines)
+import String
+import Task
+
+run : List String -> Platform.Program () Model Msg
+run _ =
+    Platform.worker
+        { init = \_ -> init
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+type alias Model =
+    { step : Int }
+
+type Msg
+    = Generated (Result String String)
+    | GotLine String
+    | Exited Int
+
+{-| Subprocesses after in-process generate.
+-}
+shellSteps : List ( String, List String )
+shellSteps =
+    [ ( "selm", [ "export", "--out", "public" ] )
+    , ( "npm", [ "install" ] )
+    , ( "npm", [ "run", "deploy" ] )
+    ]
+
+init : ( Model, Cmd Msg )
+init =
+    let
+        _ =
+            Logger.info "deploy" "→ generate_articles"
+    in
+    ( { step = -1 }, Task.attempt Generated GenerateArticles.generate )
+
+startShellStep : Int -> ( Model, Cmd Msg )
+startShellStep index =
+    case List.head (List.drop index shellSteps) of
+        Just ( cmd, args ) ->
+            let
+                _ =
+                    Logger.info "deploy" ("→ " ++ cmd ++ " " ++ String.join " " args)
+            in
+            ( { step = index }
+            , Port.spawn lines
+                cmd
+                [ Port.binary
+                , Port.line 8192
+                , Port.exitStatus
+                , Port.stderrToStdout
+                , Port.args args
+                ]
+            )
+
+        Nothing ->
+            let
+                _ =
+                    Logger.info "deploy" "ok"
+            in
+            ( { step = index }, Platform.exit 0 )
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Generated (Ok message) ->
+            let
+                _ =
+                    Logger.info "deploy" message
+            in
+            startShellStep 0
+
+        Generated (Err err) ->
+            let
+                _ =
+                    Logger.error "deploy" err
+            in
+            ( model, Platform.exit 1 )
+
+        GotLine line ->
+            let
+                _ =
+                    Logger.info "deploy" line
+            in
+            ( model, Cmd.none )
+
+        Exited 0 ->
+            startShellStep (model.step + 1)
+
+        Exited code ->
+            let
+                _ =
+                    Logger.error "deploy"
+                        ("failed (exit " ++ String.fromInt code ++ ")")
+            in
+            ( model, Platform.exit code )
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ lines GotLine
+        , Port.onExit lines Exited
+        ]

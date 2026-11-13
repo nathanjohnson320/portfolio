@@ -2,7 +2,7 @@
 
 Static site built with [Selm](https://github.com/nathanjohnson320/selm) (BEAM Html SSR + `selm export`), deployed to Cloudflare.
 
-This branch (`selm-poc`) ports the Gleam + Lustre SSG site to Selm to exercise basic Gleam use cases: multi-page static export, markdown articles, shared layout, and a honeypot archive.
+This branch (`selm-poc`) ports the Gleam + Lustre SSG site to Selm to exercise basic Gleam use cases: multi-page static export, markdown articles, and shared layout.
 
 ## Prerequisites
 
@@ -31,8 +31,7 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 ## Deploy
 
 ```bash
-selm generate_articles
-selm export --out public
-npm install
-npm run deploy
+selm deploy
 ```
+
+Runs `generate_articles`, `export --out public`, `npm install`, then `npm run deploy` (wrangler).

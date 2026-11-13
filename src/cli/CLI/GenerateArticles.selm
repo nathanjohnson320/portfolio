@@ -1,4 +1,4 @@
-module CLI.GenerateArticles exposing (run)
+module CLI.GenerateArticles exposing (generate, run)
 
 {-| Read `content/articles/*.md` and `static/styles.css`, write:
 

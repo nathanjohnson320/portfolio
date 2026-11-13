@@ -1,13 +1,13 @@
 module Layout exposing (layout, pageHeading)
 
-{-| Shared page chrome: stylesheet, site header, footer, honeypot traps.
+{-| Shared page chrome: stylesheet, site header, footer.
 -}
 
 import Html exposing (Html)
 import Html.Attributes as Attr
 
-layout : String -> Html msg -> Html msg -> Html msg
-layout pageTitle page traps =
+layout : String -> Html msg -> Html msg
+layout pageTitle page =
     Html.node "html"
         []
         [ Html.head []
@@ -67,7 +67,6 @@ layout pageTitle page traps =
                         ]
                     ]
                 ]
-            , traps
             ]
         ]
 

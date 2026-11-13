@@ -15,8 +15,8 @@ type alias ToolSection =
     , tools : List Tool
     }
 
-page : Html msg -> Html msg
-page traps =
+page : Html msg
+page =
     let
         sections =
             [ { title = "Workstation"
@@ -62,7 +62,6 @@ page traps =
             , Html.div [ Attr.class "uses-sections" ] (List.map renderSection sections)
             ]
         )
-        traps
 
 renderSection : ToolSection -> Html msg
 renderSection sec =

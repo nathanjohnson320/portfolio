@@ -1,9 +1,8 @@
-module Site exposing (pages, pathFromUrl)
+module Site exposing (pages)
 
 {-| Static site page list for `selm export`. Bodies are thunks so pages render one at a time.
 -}
 
-import Bait
 import Generated.Articles as Articles
 import Html exposing (Html)
 import List
@@ -14,78 +13,26 @@ import Pages.Home as Home
 import Pages.Projects as Projects
 import Pages.Terms as Terms
 import Pages.Uses as Uses
-import Random
-import String
-
-{-| Wall-clock millis for bait seed (BEAM `erlang:system_time(millisecond)`).
--}
-nowMillis : Int
-nowMillis =
-    erlang "selm_time" "now"
 
 pages : List { path : String, body : () -> Html msg }
 pages =
     let
         articles =
             Articles.all
-
-        ( baitPosts, _ ) =
-            Bait.generate (Random.initialSeed nowMillis)
-
-        traps =
-            Bait.trapLinks baitPosts
     in
     List.concat
-        [ [ { path = "index.html", body = \_ -> Home.page articles traps }
-          , { path = "about/index.html", body = \_ -> About.page traps }
-          , { path = "articles/index.html", body = \_ -> ArticlesPage.page articles traps }
-          , { path = "projects/index.html", body = \_ -> Projects.page traps }
-          , { path = "uses/index.html", body = \_ -> Uses.page traps }
-          , { path = "terms/index.html", body = \_ -> Terms.page traps }
-          , { path = "archive/index.html", body = \_ -> Bait.indexPage baitPosts }
+        [ [ { path = "index.html", body = \_ -> Home.page articles }
+          , { path = "about/index.html", body = \_ -> About.page }
+          , { path = "articles/index.html", body = \_ -> ArticlesPage.page articles }
+          , { path = "projects/index.html", body = \_ -> Projects.page }
+          , { path = "uses/index.html", body = \_ -> Uses.page }
+          , { path = "terms/index.html", body = \_ -> Terms.page }
           ]
         , List.map
             (\post ->
                 { path = "articles/" ++ post.id ++ ".html"
-                , body = \_ -> Article.page post traps
+                , body = \_ -> Article.page post
                 }
             )
             articles
-        , List.map
-            (\post ->
-                { path = "archive/" ++ post.id ++ ".html"
-                , body = \_ -> Bait.view post baitPosts
-                }
-            )
-            baitPosts
         ]
-
-{-| Map a request path to an export file path.
-
-`/articles/foo` → `articles/foo.html` (flat article files).
-`/about` → `about/index.html`.
--}
-pathFromUrl : String -> String
-pathFromUrl url =
-    let
-        trimmed =
-            if String.startsWith "/" url then
-                String.dropLeft 1 url
-
-            else
-                url
-    in
-    if trimmed == "" then
-        "index.html"
-
-    else if String.endsWith ".html" trimmed then
-        trimmed
-
-    else if String.startsWith "articles/" trimmed || String.startsWith "archive/" trimmed then
-        trimmed ++ ".html"
-
-    else if String.endsWith "/" trimmed then
-        trimmed ++ "index.html"
-
-    else
-        trimmed ++ "/index.html"
