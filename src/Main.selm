@@ -27,7 +27,7 @@ handle req =
                             Server.html 200 [] view
 
                         Nothing ->
-                            Server.empty 404 []
+                            Server.static "static" path
 
         _ ->
             Server.empty 404 []
