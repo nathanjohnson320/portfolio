@@ -1,11 +1,10 @@
 module CLI.Deploy exposing (run)
 
-{-| Generate articles in-process, then export and deploy via OS processes.
+{-| Export and deploy via OS processes.
 
     selm deploy
 -}
 
-import CLI.GenerateArticles as GenerateArticles
 import List
 import Logger
 import Platform
@@ -14,7 +13,6 @@ import Platform.Sub as Sub exposing (Sub)
 import Port
 import Shell exposing (lines)
 import String
-import Task
 
 run : List String -> Platform.Program () Model Msg
 run _ =
@@ -25,38 +23,32 @@ run _ =
         }
 
 type alias Model =
-    { step : Int }
+    { remaining : List ( String, List String ) }
 
 type Msg
-    = Generated (Result String String)
-    | GotLine String
+    = GotLine String
     | Exited Int
 
-{-| Subprocesses after in-process generate.
--}
-shellSteps : List ( String, List String )
-shellSteps =
-    [ ( "selm", [ "export", "--out", "public" ] )
+steps : List ( String, List String )
+steps =
+    [ ( "selm", [ "generate_articles" ] )
+    , ( "selm", [ "export", "--out", "public" ] )
     , ( "wrangler", [ "deploy" ] )
     ]
 
 init : ( Model, Cmd Msg )
 init =
-    let
-        _ =
-            Logger.info "deploy" "→ generate_articles"
-    in
-    ( { step = -1 }, Task.attempt Generated GenerateArticles.generate )
+    start steps
 
-startShellStep : Int -> ( Model, Cmd Msg )
-startShellStep index =
-    case List.head (List.drop index shellSteps) of
-        Just ( cmd, args ) ->
+start : List ( String, List String ) -> ( Model, Cmd Msg )
+start queue =
+    case queue of
+        ( cmd, args ) :: rest ->
             let
                 _ =
                     Logger.info "deploy" ("→ " ++ cmd ++ " " ++ String.join " " args)
             in
-            ( { step = index }
+            ( { remaining = rest }
             , Port.spawn lines
                 cmd
                 [ Port.binary
@@ -67,30 +59,16 @@ startShellStep index =
                 ]
             )
 
-        Nothing ->
+        [] ->
             let
                 _ =
                     Logger.info "deploy" "ok"
             in
-            ( { step = index }, Platform.exit 0 )
+            ( { remaining = [] }, Platform.exit 0 )
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Generated (Ok message) ->
-            let
-                _ =
-                    Logger.info "deploy" message
-            in
-            startShellStep 0
-
-        Generated (Err err) ->
-            let
-                _ =
-                    Logger.error "deploy" err
-            in
-            ( model, Platform.exit 1 )
-
         GotLine line ->
             let
                 _ =
@@ -99,7 +77,7 @@ update msg model =
             ( model, Cmd.none )
 
         Exited 0 ->
-            startShellStep (model.step + 1)
+            start model.remaining
 
         Exited code ->
             let
