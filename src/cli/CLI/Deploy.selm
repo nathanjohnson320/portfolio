@@ -37,8 +37,7 @@ type Msg
 shellSteps : List ( String, List String )
 shellSteps =
     [ ( "selm", [ "export", "--out", "public" ] )
-    , ( "npm", [ "install" ] )
-    , ( "npm", [ "run", "deploy" ] )
+    , ( "wrangler", [ "deploy" ] )
     ]
 
 init : ( Model, Cmd Msg )

@@ -7,6 +7,7 @@ This branch (`selm-poc`) ports the Gleam + Lustre SSG site to Selm to exercise b
 ## Prerequisites
 
 - Erlang/OTP **29** (see [`.tool-versions`](.tool-versions))
+- [Wrangler](https://developers.cloudflare.com/workers/wrangler/install-and-update/) on `PATH` (for `selm deploy`)
 - A local **release** build of the Selm CLI:
 
 ```bash
@@ -34,4 +35,4 @@ Open [http://127.0.0.1:3000](http://127.0.0.1:3000).
 selm deploy
 ```
 
-Runs `generate_articles`, `export --out public`, `npm install`, then `npm run deploy` (wrangler).
+Runs `generate_articles`, `export --out public`, then `wrangler deploy`.
