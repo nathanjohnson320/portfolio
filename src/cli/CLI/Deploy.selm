@@ -1,0 +1,94 @@
+module CLI.Deploy exposing (run)
+
+{-| Export and deploy via OS processes.
+
+    selm deploy
+-}
+
+import Logger
+import Platform
+import Platform.Cmd as Cmd exposing (Cmd)
+import Platform.Sub as Sub exposing (Sub)
+import Port
+import Shell exposing (lines)
+import String
+
+run : List String -> Platform.Program () Model Msg
+run _ =
+    Platform.worker
+        { init = \_ -> init
+        , update = update
+        , subscriptions = subscriptions
+        }
+
+type alias Model =
+    { remaining : List ( String, List String ) }
+
+type Msg
+    = GotLine String
+    | Exited Int
+
+steps : List ( String, List String )
+steps =
+    [ ( "selm", [ "generate_articles" ] )
+    , ( "selm", [ "export", "--out", "public" ] )
+    , ( "wrangler", [ "deploy" ] )
+    ]
+
+init : ( Model, Cmd Msg )
+init =
+    start steps
+
+start : List ( String, List String ) -> ( Model, Cmd Msg )
+start queue =
+    case queue of
+        ( cmd, args ) :: rest ->
+            let
+                _ =
+                    Logger.info "deploy" ("→ " ++ cmd ++ " " ++ String.join " " args)
+            in
+            ( { remaining = rest }
+            , Port.spawn lines
+                cmd
+                [ Port.binary
+                , Port.line 8192
+                , Port.exitStatus
+                , Port.stderrToStdout
+                , Port.args args
+                ]
+            )
+
+        [] ->
+            let
+                _ =
+                    Logger.info "deploy" "ok"
+            in
+            ( { remaining = [] }, Platform.exit 0 )
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        GotLine line ->
+            let
+                _ =
+                    Logger.info "deploy" line
+            in
+            ( model, Cmd.none )
+
+        Exited 0 ->
+            start model.remaining
+
+        Exited code ->
+            let
+                _ =
+                    Logger.error "deploy"
+                        ("failed (exit " ++ String.fromInt code ++ ")")
+            in
+            ( model, Platform.exit code )
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Sub.batch
+        [ lines GotLine
+        , Port.onExit lines Exited
+        ]

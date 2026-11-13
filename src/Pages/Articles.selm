@@ -1,0 +1,29 @@
+module Pages.Articles exposing (page)
+
+import ArticlesData exposing (Article)
+import Html exposing (Html)
+import Html.Attributes as Attr
+import Layout
+import List
+
+page : List Article -> Html msg
+page articles =
+    Layout.layout "Articles"
+        (Html.div []
+            [ Layout.pageHeading
+                "Writing on software, art, and everything in between."
+                "All of my long-form thoughts on programming, oil painting, and career, collected in chronological order."
+            , Html.ul [ Attr.class "article-list" ] (List.map articleItem articles)
+            ]
+        )
+
+articleItem : Article -> Html msg
+articleItem item =
+    Html.li []
+        [ Html.article [ Attr.class "article-card" ]
+            [ Html.h2 []
+                [ Html.a [ Attr.href ("/articles/" ++ item.id) ] [ Html.text item.title ] ]
+            , Html.node "time" [] [ Html.text (ArticlesData.formatDate item.date) ]
+            , Html.p [] [ Html.text item.description ]
+            ]
+        ]

@@ -1,0 +1,41 @@
+{
+  "lock_version": 2,
+  "hex": {
+    "cowboy": {
+      "checksum": "a0be47464a2887f71c061ce90723dc17441c9b81ba9569cd9b596eb0367d1edd",
+      "organization": null,
+      "requirements": {
+        "cowlib": {
+          "optional": false,
+          "organization": null,
+          "requirement": ">= 2.21.0 and < 3.0.0"
+        },
+        "ranch": {
+          "optional": false,
+          "organization": null,
+          "requirement": ">= 1.8.0 and < 3.0.0"
+        }
+      },
+      "version": "2.20.0"
+    },
+    "cowlib": {
+      "checksum": "b1ea5995d8f1ab5086ae7afe710c2075c7872c7e1acaf45dd0db7595e900c0fc",
+      "organization": null,
+      "requirements": {},
+      "version": "2.22.0"
+    },
+    "ranch": {
+      "checksum": "64d98b8c61d39b7b9a2e2cf92ae659b8623a69766f415ae13dc726864ec04ab9",
+      "organization": null,
+      "requirements": {},
+      "version": "2.4.0"
+    },
+    "thoas": {
+      "checksum": "e38697edffd6e91bd12cea41b155115282630075c2a727e7a6b2947f5408b86a",
+      "organization": null,
+      "requirements": {},
+      "version": "1.2.1"
+    }
+  },
+  "elm": {}
+}

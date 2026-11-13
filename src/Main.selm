@@ -1,0 +1,132 @@
+module Main exposing (main)
+
+{-| Live preview server for the portfolio.
+-}
+
+import ArticlesData exposing (Article)
+import Generated.Articles as Articles
+import Generated.Styles as Styles
+import List
+import Pages.About as AboutPage
+import Pages.Article as ArticlePage
+import Pages.Articles as ArticlesPage
+import Pages.Home as HomePage
+import Pages.Projects as ProjectsPage
+import Pages.Terms as TermsPage
+import Pages.Uses as UsesPage
+import Server exposing (Request, Response, Server)
+import Server.Route as Route exposing
+    ( Total
+    , get
+    , map
+    , methodNotAllowed
+    , notFound
+    , oneOf
+    , s
+    , string
+    , top
+    , (</>)
+    )
+import String
+
+main : Server
+main =
+    Server.serve handle
+
+type Page
+    = Home
+    | About
+    | Articles
+    | Article String
+    | Projects
+    | Uses
+    | Terms
+    | Styles
+    | BadMethod
+    | Missing
+
+routes : Total Page
+routes =
+    oneOf
+        [ map Home (get top)
+        , map About (get (s "about"))
+        , map Articles (get (s "articles"))
+        , map Article (get (s "articles" </> string))
+        , map Projects (get (s "projects"))
+        , map Uses (get (s "uses"))
+        , map Terms (get (s "terms"))
+        , map Styles (get (s "styles.css"))
+        ]
+        |> methodNotAllowed BadMethod
+        |> notFound Missing
+
+handle : Request -> Response
+handle req =
+    let
+        path =
+            normalize (req.url)
+
+        articles =
+            Articles.all
+    in
+    case
+        Route.parse routes
+            { method = req.method
+            , url = path
+            , headers = []
+            }
+    of
+        Home ->
+            Server.html 200 [] (HomePage.page articles)
+
+        About ->
+            Server.html 200 [] AboutPage.page
+
+        Articles ->
+            Server.html 200 [] (ArticlesPage.page articles)
+
+        Article id ->
+            case findArticle (dropHtmlSuffix id) articles of
+                Just post ->
+                    Server.html 200 [] (ArticlePage.page post)
+
+                Nothing ->
+                    Server.empty 404 []
+
+        Projects ->
+            Server.html 200 [] ProjectsPage.page
+
+        Uses ->
+            Server.html 200 [] UsesPage.page
+
+        Terms ->
+            Server.html 200 [] TermsPage.page
+
+        Styles ->
+            Server.string 200 [] "text/css; charset=utf-8" Styles.css
+
+        BadMethod ->
+            Server.empty 405 []
+
+        Missing ->
+            Server.static "static" path
+
+normalize : String -> String
+normalize url =
+    if String.endsWith "/" url && url /= "/" then
+        String.dropRight 1 url
+
+    else
+        url
+
+dropHtmlSuffix : String -> String
+dropHtmlSuffix id =
+    if String.endsWith ".html" id then
+        String.dropRight 5 id
+
+    else
+        id
+
+findArticle : String -> List Article -> Maybe Article
+findArticle id list =
+    List.find (\post -> post.id == id) list

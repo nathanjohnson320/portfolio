@@ -1,0 +1,19 @@
+module Pages.Article exposing (page)
+
+import ArticlesData exposing (Article)
+import Html exposing (Html)
+import Html.Attributes as Attr
+import Layout
+import Markdown
+
+page : Article -> Html msg
+page post =
+    Layout.layout post.title
+        (Html.article [ Attr.class "prose" ]
+            [ Html.p [ Attr.class "back" ]
+                [ Html.a [ Attr.href "/articles" ] [ Html.text "← Articles" ] ]
+            , Html.h1 [] [ Html.text post.title ]
+            , Html.node "time" [] [ Html.text (ArticlesData.formatDate post.date) ]
+            , Html.div [ Attr.class "article-body" ] [ Markdown.toHtml post.body ]
+            ]
+        )

@@ -1,0 +1,72 @@
+module ArticlesData exposing (Article, formatDate)
+
+{-| Article metadata and helpers. Bodies live in `Generated.Articles`.
+-}
+
+import String
+
+type alias Article =
+    { id : String
+    , title : String
+    , description : String
+    , date : String
+    , body : String
+    }
+
+{-| ISO `YYYY-MM-DD` → `Month D, YYYY`.
+-}
+formatDate : String -> String
+formatDate date =
+    case String.split "-" date of
+        year :: month :: day :: [] ->
+            case String.toInt day of
+                Just d ->
+                    monthName month ++ " " ++ String.fromInt d ++ ", " ++ year
+
+                Nothing ->
+                    date
+
+        _ ->
+            date
+
+monthName : String -> String
+monthName month =
+    case String.toInt month of
+        Just 1 ->
+            "January"
+
+        Just 2 ->
+            "February"
+
+        Just 3 ->
+            "March"
+
+        Just 4 ->
+            "April"
+
+        Just 5 ->
+            "May"
+
+        Just 6 ->
+            "June"
+
+        Just 7 ->
+            "July"
+
+        Just 8 ->
+            "August"
+
+        Just 9 ->
+            "September"
+
+        Just 10 ->
+            "October"
+
+        Just 11 ->
+            "November"
+
+        Just 12 ->
+            "December"
+
+        _ ->
+            month

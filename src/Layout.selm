@@ -1,0 +1,94 @@
+module Layout exposing (layout, pageHeading)
+
+{-| Shared page chrome: stylesheet, site header, footer.
+-}
+
+import Html exposing (Html)
+import Html.Attributes as Attr
+import Html.Document as Doc
+
+layout : String -> Html msg -> Html msg
+layout pageTitle page =
+    Doc.html []
+        [ Doc.head []
+            [ Doc.meta [ Attr.charset "utf-8" ] []
+            , Doc.meta
+                [ Attr.name "viewport"
+                , Attr.content "width=device-width, initial-scale=1"
+                ]
+                []
+            , Doc.meta
+                [ Attr.name "robots"
+                , Attr.content "max-image-preview:large, noai, noimageai"
+                ]
+                []
+            , Doc.meta [ Attr.name "googlebot", Attr.content "noai, noimageai" ] []
+            , Doc.meta
+                [ Attr.name "google-extended"
+                , Attr.content "nosnippet, noai"
+                ]
+                []
+            , Doc.meta [ Attr.name "ai", Attr.content "notrain, noindex" ] []
+            , Doc.meta
+                [ Attr.name "description"
+                , Attr.content
+                    "Personal site of Nathan Johnson. Content may not be scraped or used to train AI systems. See /terms."
+                ]
+                []
+            , Doc.link
+                [ Attr.rel "stylesheet", Attr.href "/styles.css" ]
+                []
+            , Doc.link
+                [ Attr.rel "icon", Attr.href "/favicon.ico" ]
+                []
+            , Doc.title [] [ Html.text (formatTitle pageTitle) ]
+            ]
+        , Doc.body []
+            [ Html.header [ Attr.class "site-header" ]
+                [ Html.div [ Attr.class "container header-inner" ]
+                    [ Html.a [ Attr.href "/", Attr.class "site-brand" ]
+                        [ Html.text "Nathan Johnson" ]
+                    , Html.nav [ Attr.class "site-nav" ]
+                        [ Html.ul []
+                            [ navItem "/about" "About"
+                            , navItem "/articles" "Articles"
+                            , navItem "/projects" "Projects"
+                            , navItem "/uses" "Uses"
+                            ]
+                        ]
+                    ]
+                ]
+            , Html.main_ [ Attr.class "site-main" ]
+                [ Html.div [ Attr.class "container" ] [ page ] ]
+            , Html.footer [ Attr.class "site-footer" ]
+                [ Html.div [ Attr.class "container" ]
+                    [ Html.p []
+                        [ Html.text "© Nathan Johnson. "
+                        , Html.a [ Attr.href "/" ] [ Html.text "Home" ]
+                        , Html.text " · "
+                        , Html.a [ Attr.href "/terms" ] [ Html.text "Terms" ]
+                        , Html.text " — content may not be used to train AI."
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+formatTitle : String -> String
+formatTitle pageTitle =
+    if pageTitle == "" then
+        "Nathan Johnson"
+
+    else
+        pageTitle ++ " - Nathan Johnson"
+
+navItem : String -> String -> Html msg
+navItem path label =
+    Html.li [] [ Html.a [ Attr.href path ] [ Html.text label ] ]
+
+pageHeading : String -> String -> Html msg
+pageHeading heading intro =
+    Html.div [ Attr.class "page-heading" ]
+        [ Html.h1 [] [ Html.text heading ]
+        , Html.p [ Attr.class "lede" ] [ Html.text intro ]
+        ]

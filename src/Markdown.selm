@@ -1,0 +1,479 @@
+module Markdown exposing (frontmatter, stripFrontmatter, toHtml)
+
+{-| Minimal markdown for portfolio articles: frontmatter strip, ATX headings,
+paragraphs, fenced code, lists, images, inline code and links.
+-}
+
+import Char
+import Html exposing (Html)
+import Html.Attributes as Attr
+import String
+
+tick : String
+tick =
+    String.fromChar (Char.fromCode 96)
+
+fence : String
+fence =
+    "```"
+
+{-| Body after optional `---` TOML frontmatter.
+-}
+stripFrontmatter : String -> String
+stripFrontmatter raw =
+    case frontmatter raw of
+        Just _ ->
+            dropFrontmatter raw
+
+        Nothing ->
+            raw
+
+{-| Raw TOML between opening and closing `---` lines, if present.
+-}
+frontmatter : String -> Maybe String
+frontmatter raw =
+    let
+        lines =
+            String.lines raw
+    in
+    case lines of
+        first :: rest ->
+            if String.trim first == "---" then
+                takeUntilClose rest []
+
+            else
+                Nothing
+
+        [] ->
+            Nothing
+
+takeUntilClose : List String -> List String -> Maybe String
+takeUntilClose lines acc =
+    case lines of
+        [] ->
+            Nothing
+
+        line :: rest ->
+            if String.trim line == "---" then
+                Just (String.join "\n" (List.reverse acc))
+
+            else
+                takeUntilClose rest (line :: acc)
+
+dropFrontmatter : String -> String
+dropFrontmatter raw =
+    let
+        lines =
+            String.lines raw
+    in
+    case lines of
+        first :: rest ->
+            if String.trim first == "---" then
+                String.trimLeft (String.join "\n" (dropUntilClose rest))
+
+            else
+                raw
+
+        [] ->
+            raw
+
+dropUntilClose : List String -> List String
+dropUntilClose lines =
+    case lines of
+        [] ->
+            []
+
+        line :: rest ->
+            if String.trim line == "---" then
+                rest
+
+            else
+                dropUntilClose rest
+
+toHtml : String -> Html msg
+toHtml source =
+    Html.div [ Attr.class "md" ]
+        (List.reverse (blocks (String.lines (stripFrontmatter source)) []))
+
+blocks : List String -> List (Html msg) -> List (Html msg)
+blocks lines acc =
+    case lines of
+        [] ->
+            acc
+
+        line :: rest ->
+            let
+                trimmed =
+                    String.trim line
+            in
+            if trimmed == fence || String.startsWith fence trimmed then
+                let
+                    taken =
+                        takeFence rest []
+                in
+                blocks taken.rest (codeBlock taken.code :: acc)
+
+            else if isAtxHeading trimmed then
+                blocks rest (headingHtml trimmed :: acc)
+
+            else if isUnorderedItem trimmed then
+                let
+                    taken =
+                        takeList lines False []
+                in
+                blocks taken.rest (Html.ul [] (List.reverse taken.items) :: acc)
+
+            else if isOrderedItem trimmed then
+                let
+                    taken =
+                        takeList lines True []
+                in
+                blocks taken.rest (Html.ol [] (List.reverse taken.items) :: acc)
+
+            else if trimmed == "" then
+                blocks rest acc
+
+            else
+                let
+                    taken =
+                        takeParagraph lines []
+                in
+                blocks taken.rest (Html.p [] (inline (taken.text)) :: acc)
+
+isAtxHeading : String -> Bool
+isAtxHeading trimmed =
+    String.startsWith "# " trimmed
+        || String.startsWith "## " trimmed
+        || String.startsWith "### " trimmed
+
+headingHtml : String -> Html msg
+headingHtml trimmed =
+    let
+        level =
+            headingLevel trimmed
+
+        text =
+            headingText trimmed
+    in
+    if level == 1 then
+        Html.h1 [] [ Html.text text ]
+
+    else if level == 2 then
+        Html.h2 [] [ Html.text text ]
+
+    else
+        Html.h3 [] [ Html.text text ]
+
+headingLevel : String -> Int
+headingLevel trimmed =
+    if String.startsWith "### " trimmed then
+        3
+
+    else if String.startsWith "## " trimmed then
+        2
+
+    else
+        1
+
+headingText : String -> String
+headingText trimmed =
+    if String.startsWith "### " trimmed then
+        String.dropLeft 4 trimmed
+
+    else if String.startsWith "## " trimmed then
+        String.dropLeft 3 trimmed
+
+    else if String.startsWith "# " trimmed then
+        String.dropLeft 2 trimmed
+
+    else
+        trimmed
+
+isUnorderedItem : String -> Bool
+isUnorderedItem trimmed =
+    String.startsWith "* " trimmed || String.startsWith "- " trimmed
+
+isOrderedItem : String -> Bool
+isOrderedItem trimmed =
+    case String.indexes ". " trimmed of
+        i :: _ ->
+            let
+                prefix =
+                    String.left i trimmed
+            in
+            prefix /= "" && List.all Char.isDigit (String.toList prefix)
+
+        [] ->
+            False
+
+listItemText : String -> String
+listItemText trimmed =
+    if String.startsWith "* " trimmed || String.startsWith "- " trimmed then
+        String.dropLeft 2 trimmed
+
+    else
+        case String.indexes ". " trimmed of
+            i :: _ ->
+                String.dropLeft (i + 2) trimmed
+
+            [] ->
+                trimmed
+
+type alias FenceTaken =
+    { code : String
+    , rest : List String
+    }
+
+takeFence : List String -> List String -> FenceTaken
+takeFence lines acc =
+    case lines of
+        [] ->
+            { code = String.join "\n" (List.reverse acc), rest = [] }
+
+        line :: rest ->
+            let
+                trimmed =
+                    String.trim line
+            in
+            if trimmed == fence || String.startsWith fence trimmed then
+                { code = String.join "\n" (List.reverse acc), rest = rest }
+
+            else
+                takeFence rest (line :: acc)
+
+type alias ParaTaken =
+    { text : String
+    , rest : List String
+    }
+
+takeParagraph : List String -> List String -> ParaTaken
+takeParagraph lines acc =
+    case lines of
+        [] ->
+            { text = String.join " " (List.reverse acc), rest = [] }
+
+        line :: rest ->
+            let
+                trimmed =
+                    String.trim line
+            in
+            if
+                trimmed
+                    == ""
+                    || trimmed
+                    == fence
+                    || String.startsWith fence trimmed
+                    || isAtxHeading trimmed
+                    || isUnorderedItem trimmed
+                    || isOrderedItem trimmed
+            then
+                { text = String.join " " (List.reverse acc), rest = lines }
+
+            else
+                takeParagraph rest (line :: acc)
+
+type alias ListTaken msg =
+    { items : List (Html msg)
+    , rest : List String
+    }
+
+takeList : List String -> Bool -> List (Html msg) -> ListTaken msg
+takeList lines ordered acc =
+    case lines of
+        [] ->
+            { items = acc, rest = [] }
+
+        line :: rest ->
+            let
+                trimmed =
+                    String.trim line
+
+                match =
+                    if ordered then
+                        isOrderedItem trimmed
+
+                    else
+                        isUnorderedItem trimmed
+            in
+            if match then
+                takeList rest
+                    ordered
+                    (Html.li [] (inline (listItemText trimmed)) :: acc)
+
+            else if trimmed == "" then
+                { items = acc, rest = rest }
+
+            else
+                { items = acc, rest = lines }
+
+codeBlock : String -> Html msg
+codeBlock source =
+    Html.pre [] [ Html.code [] [ Html.text source ] ]
+
+-- INLINE
+
+inline : String -> List (Html msg)
+inline text =
+    List.reverse (inlineHelp text [])
+
+inlineHelp : String -> List (Html msg) -> List (Html msg)
+inlineHelp text acc =
+    case nextMark text of
+        Nothing ->
+            if text == "" then
+                acc
+
+            else
+                Html.text text :: acc
+
+        Just mark ->
+            let
+                before =
+                    String.left mark.at text
+
+                after =
+                    String.dropLeft mark.at text
+
+                baseAcc =
+                    if before == "" then
+                        acc
+
+                    else
+                        Html.text before :: acc
+            in
+            case mark.kind of
+                CodeMark ->
+                    takeInlineCode after baseAcc
+
+                LinkMark ->
+                    takeInlineLink after baseAcc
+
+                ImageMark ->
+                    takeInlineImage after baseAcc
+
+type MarkKind
+    = CodeMark
+    | LinkMark
+    | ImageMark
+
+type alias Mark =
+    { kind : MarkKind
+    , at : Int
+    }
+
+nextMark : String -> Maybe Mark
+nextMark text =
+    let
+        tickAt =
+            List.head (String.indexes tick text)
+
+        imageAt =
+            List.head (String.indexes "![" text)
+
+        linkAt =
+            List.head (String.indexes "[" text)
+    in
+    pickMark tickAt imageAt linkAt
+
+pickMark : Maybe Int -> Maybe Int -> Maybe Int -> Maybe Mark
+pickMark tickAt imageAt linkAt =
+    let
+        candidates =
+            List.filterMap (\x -> x)
+                [ Maybe.map (\t -> { kind = CodeMark, at = t }) tickAt
+                , Maybe.map (\i -> { kind = ImageMark, at = i }) imageAt
+                , Maybe.map (\l -> { kind = LinkMark, at = l }) linkAt
+                ]
+    in
+    case List.sortBy .at candidates of
+        first :: _ ->
+            Just first
+
+        [] ->
+            Nothing
+
+takeInlineCode : String -> List (Html msg) -> List (Html msg)
+takeInlineCode afterOpen acc =
+    let
+        body =
+            String.dropLeft 1 afterOpen
+    in
+    case List.head (String.indexes tick body) of
+        Nothing ->
+            Html.text (tick ++ body) :: acc
+
+        Just end ->
+            let
+                codeText =
+                    String.left end body
+
+                rest =
+                    String.dropLeft (end + 1) body
+            in
+            inlineHelp rest (Html.code [] [ Html.text codeText ] :: acc)
+
+takeInlineLink : String -> List (Html msg) -> List (Html msg)
+takeInlineLink afterOpen acc =
+    let
+        body =
+            String.dropLeft 1 afterOpen
+    in
+    case List.head (String.indexes "](" body) of
+        Nothing ->
+            Html.text ("[" ++ body) :: acc
+
+        Just labelEnd ->
+            let
+                label =
+                    String.left labelEnd body
+
+                afterLabel =
+                    String.dropLeft (labelEnd + 2) body
+            in
+            case List.head (String.indexes ")" afterLabel) of
+                Nothing ->
+                    Html.text ("[" ++ body) :: acc
+
+                Just hrefEnd ->
+                    let
+                        href =
+                            String.left hrefEnd afterLabel
+
+                        rest =
+                            String.dropLeft (hrefEnd + 1) afterLabel
+                    in
+                    inlineHelp rest
+                        (Html.a [ Attr.href href ] [ Html.text label ] :: acc)
+
+takeInlineImage : String -> List (Html msg) -> List (Html msg)
+takeInlineImage afterBang acc =
+    let
+        afterOpen =
+            String.dropLeft 2 afterBang
+    in
+    case List.head (String.indexes "](" afterOpen) of
+        Nothing ->
+            Html.text ("![" ++ afterOpen) :: acc
+
+        Just altEnd ->
+            let
+                alt =
+                    String.left altEnd afterOpen
+
+                afterAlt =
+                    String.dropLeft (altEnd + 2) afterOpen
+            in
+            case List.head (String.indexes ")" afterAlt) of
+                Nothing ->
+                    Html.text ("![" ++ afterOpen) :: acc
+
+                Just srcEnd ->
+                    let
+                        src =
+                            String.left srcEnd afterAlt
+
+                        rest =
+                            String.dropLeft (srcEnd + 1) afterAlt
+                    in
+                    inlineHelp rest
+                        (Html.img [ Attr.src src, Attr.alt alt ] [] :: acc)

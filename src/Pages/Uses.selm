@@ -1,0 +1,78 @@
+module Pages.Uses exposing (page)
+
+import Html exposing (Html)
+import Html.Attributes as Attr
+import Layout
+import List
+
+type alias Tool =
+    { title : String
+    , description : String
+    }
+
+type alias ToolSection =
+    { title : String
+    , tools : List Tool
+    }
+
+page : Html msg
+page =
+    let
+        sections =
+            [ { title = "Workstation"
+              , tools =
+                    [ { title = "M4 Max Mac Studio"
+                      , description = "I used to have a 14\" Starlabs Starbook but I switched to a Mac Studio because it has way more horsepower and can run my LLM workflows. Also going back to macOS because it's just a better experience overall."
+                      }
+                    , { title = "Keyboard.io Model 100 Keyboard"
+                      , description = "This is the best keyboard I've ever used. It's a split keyboard with mechanical switches and a ton of programmable keys. It's also shaped like a butterfly which is cool."
+                      }
+                    , { title = "Kensington Expert Mouse Trackball"
+                      , description = "I've been using a trackball for years and I'm never going back. I love the Expert Mouse because it has a scroll ring which is super useful."
+                      }
+                    ]
+              }
+            , { title = "Development tools"
+              , tools =
+                    [ { title = "Emacs"
+                      , description = "Yeah I know, I'm one of those people. I've been using Emacs for years and I don't see myself switching anytime soon. I've got it configured just how I like it and I'm super productive with it. And yes I switch to VS Code when I need to pair program with someone."
+                      }
+                    , { title = "Cursor"
+                      , description = "I know a lot of people use claude code these days, but I have way more success with cursor and it is exponentially faster. I dunno claude code doens't really cut it with the code quality either cursor tends to have better context and better code completions."
+                      }
+                    , { title = "SQLTools"
+                      , description = "Great VS Code extension for working with databases. I use it a lot and it's saved me a ton of time."
+                      }
+                    ]
+              }
+            , { title = "Design"
+              , tools =
+                    [ { title = "Lucid"
+                      , description = "Lucid is a great tool for creating diagrams and flowcharts. I use it pretty often for database ERDs and system diagrams. It's simple and fast and easy to embed in corporate tools like Confluence."
+                      }
+                    ]
+              }
+            ]
+    in
+    Layout.layout "Uses"
+        (Html.div []
+            [ Layout.pageHeading
+                "Tools that I use to build software, stay productive, or just enjoy in general."
+                "I get asked a lot about the things I use to build software, stay productive, or buy to fool myself into thinking I'm being productive when I'm really just procrastinating. Here's a big list of all of my favorite stuff."
+            , Html.div [ Attr.class "uses-sections" ] (List.map renderSection sections)
+            ]
+        )
+
+renderSection : ToolSection -> Html msg
+renderSection sec =
+    Html.section [ Attr.class "uses-section" ]
+        [ Html.h2 [] [ Html.text sec.title ]
+        , Html.ul [] (List.map renderTool sec.tools)
+        ]
+
+renderTool : Tool -> Html msg
+renderTool tool =
+    Html.li [ Attr.class "tool" ]
+        [ Html.h3 [] [ Html.text tool.title ]
+        , Html.p [] [ Html.text tool.description ]
+        ]
