@@ -1,0 +1,93 @@
+module Pages.Home exposing (page)
+
+import ArticlesData exposing (Article)
+import Html exposing (Html)
+import Html.Attributes as Attr
+import Layout
+import List
+
+page : List Article -> Html msg -> Html msg
+page articles traps =
+    let
+        latest =
+            List.take 4 articles
+    in
+    Layout.layout ""
+        (Html.div []
+            [ Html.div [ Attr.class "hero" ]
+                [ Html.h1 []
+                    [ Html.text "Software engineer, entrepreneur, and professional artist." ]
+                , Html.p [ Attr.class "lede" ]
+                    [ Html.text "I'm Nathan, a software engineer and oil painter based in Tallinn Estonia. I'm currently working with STORD building out the cloud supply chain and oil painting on my YouTube channel in my free time."
+                    ]
+                , Html.ul [ Attr.class "social-links" ]
+                    [ social "https://bsky.app/profile/nathanjohnson320.bsky.social" "Bluesky"
+                    , social "https://www.instagram.com/paint.by.nate/" "Instagram"
+                    , social "https://github.com/nathanjohnson320" "GitHub"
+                    , social "https://www.linkedin.com/in/nathan-johnson-b8659562/" "LinkedIn"
+                    , social "https://x.com/PaintByNate" "X"
+                    ]
+                ]
+            , photos
+            , Html.div [ Attr.class "home-grid" ]
+                [ Html.div [ Attr.class "home-articles" ] (List.map articleCard latest)
+                , resume
+                ]
+            ]
+        )
+        traps
+
+social : String -> String -> Html msg
+social url label =
+    Html.li [] [ Html.a [ Attr.href url ] [ Html.text label ] ]
+
+photos : Html msg
+photos =
+    Html.div [ Attr.class "photo-strip" ]
+        [ photoFrame "/img/photos/image-1.jpg"
+        , photoFrame "/img/photos/image-2.jpg"
+        , photoFrame "/img/photos/image-3.jpg"
+        , photoFrame "/img/photos/image-4.jpg"
+        , photoFrame "/img/photos/image-5.jpg"
+        ]
+
+photoFrame : String -> Html msg
+photoFrame src =
+    Html.div [ Attr.class "photo-frame" ]
+        [ Html.img [ Attr.src src, Attr.alt "", Attr.class "photo" ] ]
+
+articleCard : Article -> Html msg
+articleCard item =
+    Html.article [ Attr.class "article-card" ]
+        [ Html.h2 []
+            [ Html.a [ Attr.href ("/articles/" ++ item.id) ] [ Html.text item.title ] ]
+        , Html.node "time" [] [ Html.text (ArticlesData.formatDate item.date) ]
+        , Html.p [] [ Html.text item.description ]
+        , Html.p [ Attr.class "read-more" ]
+            [ Html.a [ Attr.href ("/articles/" ++ item.id) ] [ Html.text "Read article →" ] ]
+        ]
+
+resume : Html msg
+resume =
+    Html.div [ Attr.class "resume" ]
+        [ Html.h2 [] [ Html.text "Work" ]
+        , Html.ol [ Attr.class "roles" ]
+            [ role "STORD" "Senior Fullstack Engineer" "/img/logos/stord.png" "2021" "Present"
+            , role "Sprout ITAD" "Senior Software Engineer" "/img/logos/sprout.png" "2020" "2021"
+            , role "Passport" "Software Engineer III" "/img/logos/passport.png" "2019" "2020"
+            , role "Red Ventures" "Senior Software Engineer" "/img/logos/red-ventures.png" "2014" "2019"
+            ]
+        , Html.p [ Attr.class "cv-link" ]
+            [ Html.a [ Attr.href "/files/nathan-johnson-resume.pdf" ] [ Html.text "Download CV" ] ]
+        ]
+
+role : String -> String -> String -> String -> String -> Html msg
+role company title logo start end =
+    Html.li [ Attr.class "role" ]
+        [ Html.img [ Attr.src logo, Attr.alt "", Attr.class "role-logo" ]
+        , Html.div []
+            [ Html.span [ Attr.class "role-company" ] [ Html.text company ]
+            , Html.span [ Attr.class "role-title" ] [ Html.text title ]
+            , Html.span [ Attr.class "role-dates" ] [ Html.text (start ++ " - " ++ end) ]
+            ]
+        ]

@@ -1,91 +1,68 @@
-<!doctype html>
-<!-- lustre:map --><html><head><meta charset="utf-8"><meta content="width=device-width, initial-scale=1" name="viewport"><meta content="max-image-preview:large, noai, noimageai" name="robots"><meta content="noai, noimageai" name="googlebot"><meta content="nosnippet, noai" name="google-extended"><meta content="notrain, noindex" name="ai"><meta content="Personal site of Nathan Johnson. Content may not be scraped or used to train AI systems. See /terms." name="description"><link href="/styles.css" rel="stylesheet"><link href="/favicon.ico" rel="icon"><title>remix.run + cloudflare workers + supabase + tailwind - Nathan Johnson</title></head><body><header class="site-header"><div class="container header-inner"><a class="site-brand" href="/">Nathan Johnson</a><nav class="site-nav"><ul><li><a href="/about">About</a></li><li><a href="/articles">Articles</a></li><li><a href="/projects">Projects</a></li><li><a href="/uses">Uses</a></li></ul></nav></div></header><main class="site-main"><div class="container"><article class="prose"><p class="back"><a href="/articles">← Articles</a></p><h1>remix.run + cloudflare workers + supabase + tailwind</h1><time>January 18, 2022</time><div class="article-body"><h2>Setup</h2><p><em>Miniflare will only work with node &gt;=16.7 so make sure you have a compatible node version installed before this</em></p><p>Start up the create-remix cli</p><pre><code>npx create-remix@latest
-</code></pre><p>Select Cloudflare Workers</p><p><img alt="remix cli selecting cloudflare workers" src="/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-setup.png"></p><p>You can use typescript or javascript. For this I&#39;m using typescript.</p><p>Add concurrently to build the css, worker, and remix dev at the same time. Also at dotenv for environment variable injection locally (don&#39;t commit your .env). You also need to add the serve package because it doesn&#39;t get added by the create script for some reason.</p><pre><code>npm install --save-dev concurrently dotenv @remix-run/serve
-</code></pre><p>Update the dev script to concurrently build and run the worker locally</p><pre><code>&quot;dev&quot;: &quot;concurrently \&quot;node -r dotenv/config node_modules/.bin/remix dev\&quot; \&quot;npm run start\&quot;&quot;,
-</code></pre><p>Now if you run <code>yarn dev</code> or <code>npm run dev</code> it should start your app on localhost:8787</p><p><img alt="local remix starter page" src="/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-starter.png"></p><h2>Tailwind</h2><p>Install dependencies</p><pre><code>npm install --save @headlessui/react @heroicons/react @tailwindcss/forms tailwindcss
-</code></pre><p>Add a build command for the css to package.json &quot;scripts&quot;</p><pre><code>&quot;dev:css&quot;: &quot;tailwindcss -i ./styles/tailwind.css -o ./app/tailwind.css --watch&quot;,
-</code></pre><p>Update the &quot;dev&quot; script in package.json to concurrently build the css, remix, and worker</p><pre><code>&quot;dev&quot;: &quot;concurrently \&quot;npm run dev:css\&quot; \&quot;node -r dotenv/config node_modules/.bin/remix dev\&quot; \&quot;npm run start\&quot;&quot;,
-</code></pre><p>Add tailwind.config.js to the root of your app</p><div><pre><code class="language-javascript">module<span class="smalto-punctuation">.</span>exports <span class="smalto-operator">=</span> <span class="smalto-punctuation">{</span>
-  <span class="smalto-property">content</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">[</span><span class="smalto-string">&#39;./app/**/*.{ts,tsx}&#39;</span><span class="smalto-punctuation">]</span><span class="smalto-punctuation">,</span>
-  <span class="smalto-property">theme</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">{</span>
-    <span class="smalto-property">extend</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">{</span><span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
-  <span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
-  <span class="smalto-property">plugins</span><span class="smalto-operator">:</span> <span class="smalto-punctuation">[</span><span class="smalto-function">require</span><span class="smalto-punctuation">(</span><span class="smalto-string">&#39;@tailwindcss/forms&#39;</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">]</span><span class="smalto-punctuation">,</span>
-<span class="smalto-punctuation">}</span>
-</code></pre>
-</div><p>Create a styles directory with the base tailwind css in it so the dev:css command will process it</p><pre><code class="language-css">/* styles/tailwind.css */
+<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="max-image-preview:large, noai, noimageai"><meta name="googlebot" content="noai, noimageai"><meta name="google-extended" content="nosnippet, noai"><meta name="ai" content="notrain, noindex"><meta name="description" content="Personal site of Nathan Johnson. Content may not be scraped or used to train AI systems. See /terms."><link rel="stylesheet" href="/styles.css"><link rel="icon" href="/favicon.ico"><title>remix.run + cloudflare workers + supabase + tailwind - Nathan Johnson</title></head><body><header class="site-header"><div class="container header-inner"><a href="/" class="site-brand">Nathan Johnson</a><nav class="site-nav"><ul><li><a href="/about">About</a></li><li><a href="/articles">Articles</a></li><li><a href="/projects">Projects</a></li><li><a href="/uses">Uses</a></li></ul></nav></div></header><main class="site-main"><div class="container"><article class="prose"><p class="back"><a href="/articles">← Articles</a></p><h1>remix.run + cloudflare workers + supabase + tailwind</h1><time>January 18, 2022</time><div class="article-body"><div class="md"><h2>Setup</h2><p>_Miniflare will only work with node &gt;=16.7 so make sure you have a compatible node version installed before this_</p><p>Start up the create-remix cli</p><pre><code>npx create-remix@latest</code></pre><p>Select Cloudflare Workers</p><p><img src="/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-setup.png" alt="remix cli selecting cloudflare workers"></p><p>You can use typescript or javascript. For this I'm using typescript.</p><p>Add concurrently to build the css, worker, and remix dev at the same time. Also at dotenv for environment variable injection locally (don't commit your .env). You also need to add the serve package because it doesn't get added by the create script for some reason.</p><pre><code>npm install --save-dev concurrently dotenv @remix-run/serve</code></pre><p>Update the dev script to concurrently build and run the worker locally</p><pre><code>"dev": "concurrently \"node -r dotenv/config node_modules/.bin/remix dev\" \"npm run start\"",</code></pre><p>Now if you run <code>yarn dev</code> or <code>npm run dev</code> it should start your app on localhost:8787</p><p><img src="/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-starter.png" alt="local remix starter page"></p><h2>Tailwind</h2><p>Install dependencies</p><pre><code>npm install --save @headlessui/react @heroicons/react @tailwindcss/forms tailwindcss</code></pre><p>Add a build command for the css to package.json "scripts"</p><pre><code>"dev:css": "tailwindcss -i ./styles/tailwind.css -o ./app/tailwind.css --watch",</code></pre><p>Update the "dev" script in package.json to concurrently build the css, remix, and worker</p><pre><code>"dev": "concurrently \"npm run dev:css\" \"node -r dotenv/config node_modules/.bin/remix dev\" \"npm run start\"",</code></pre><p>Add tailwind.config.js to the root of your app</p><pre><code>module.exports = {
+  content: ['./app/**/*.{ts,tsx}'],
+  theme: {
+    extend: {},
+  },
+  plugins: [require('@tailwindcss/forms')],
+}</code></pre><p>Create a styles directory with the base tailwind css in it so the dev:css command will process it</p><pre><code>/* styles/tailwind.css */
 @tailwind base;
 @tailwind components;
-@tailwind utilities;
-</code></pre><p>Now in the app/root.tsx we need to import and use the styles</p><div><pre><code class="language-typescript"><span class="smalto-keyword">import</span> styles <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;./tailwind.css&#39;</span>
+@tailwind utilities;</code></pre><p>Now in the app/root.tsx we need to import and use the styles</p><pre><code>import styles from './tailwind.css'
 
-<span class="smalto-keyword">export</span> <span class="smalto-keyword">function</span> <span class="smalto-function">links</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span> <span class="smalto-punctuation">{</span>
-  <span class="smalto-keyword">return</span> <span class="smalto-punctuation">[</span>
-    <span class="smalto-comment">// This is optional but is how to add a google font</span>
-    <span class="smalto-punctuation">{</span>
-      rel<span class="smalto-operator">:</span> <span class="smalto-string">&#39;stylesheet&#39;</span><span class="smalto-punctuation">,</span>
-      href<span class="smalto-operator">:</span> <span class="smalto-string">&#39;https://fonts.googleapis.com/css?family=Open+Sans&#39;</span><span class="smalto-punctuation">,</span>
-    <span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
-    <span class="smalto-punctuation">{</span> rel<span class="smalto-operator">:</span> <span class="smalto-string">&#39;stylesheet&#39;</span><span class="smalto-punctuation">,</span> href<span class="smalto-operator">:</span> styles <span class="smalto-punctuation">}</span><span class="smalto-punctuation">,</span>
-  <span class="smalto-punctuation">]</span>
-<span class="smalto-punctuation">}</span>
-</code></pre>
-</div><p>In the root.tsx if we wrap the <code>&lt;Outlet /&gt;</code> in some tailwind styles it should display properly</p><pre><code>&lt;div className=&quot;relative bg-white overflow-hidden&quot;&gt;
-  &lt;div className=&quot;mt-4&quot;&gt;
+export function links() {
+  return [
+    // This is optional but is how to add a google font
+    {
+      rel: 'stylesheet',
+      href: 'https://fonts.googleapis.com/css?family=Open+Sans',
+    },
+    { rel: 'stylesheet', href: styles },
+  ]
+}</code></pre><p>In the root.tsx if we wrap the <code>&lt;Outlet /&gt;</code> in some tailwind styles it should display properly</p><pre><code>&lt;div className="relative bg-white overflow-hidden"&gt;
+  &lt;div className="mt-4"&gt;
     &lt;Outlet /&gt;
    &lt;/div&gt;
-&lt;/div&gt;
-</code></pre><p><img alt="remix home after adding tailwind" src="/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-starter-tailwind.png"></p><h2>Supabase</h2><p>I won&#39;t go into much of the details on this but the below setup should get your cloudflare worker running with supabase. The main issues I ran into are that cloudflare workers don&#39;t have XMLHTTPRequest defined so you have to bind a fetch variable. Also the environment variables are globals not the usual <code>process.env.&lt;VAR_NAME&gt;</code>.</p><p>Step one is to install supabase</p><pre><code>npm install --save @supabase/supabase-js
-</code></pre><p>Then add your supabase url and anon key to cloudflare secrets with wrangler. You can add them to your .env locally and they will get injected the same way.</p><pre><code>wrangler secret put SUPABASE_URL
+&lt;/div&gt;</code></pre><p><img src="/img/articles/2022-01-18-remixrun-cloudflare-workers-supabase-tailwind/remix-starter-tailwind.png" alt="remix home after adding tailwind"></p><h2>Supabase</h2><p>I won't go into much of the details on this but the below setup should get your cloudflare worker running with supabase. The main issues I ran into are that cloudflare workers don't have XMLHTTPRequest defined so you have to bind a fetch variable. Also the environment variables are globals not the usual <code>process.env.&lt;VAR_NAME&gt;</code>.</p><p>Step one is to install supabase</p><pre><code>npm install --save @supabase/supabase-js</code></pre><p>Then add your supabase url and anon key to cloudflare secrets with wrangler. You can add them to your .env locally and they will get injected the same way.</p><pre><code>wrangler secret put SUPABASE_URL
 ...enter the url
 
 wrangler secret put SUPABASE_ANON_KEY
-...enter the key
-</code></pre><p>Now we need to create a client that will use the right environment variables and fetch to work.</p><div><pre><code class="language-typescript"><span class="smalto-comment">// app/db.ts</span>
-<span class="smalto-keyword">import</span> <span class="smalto-punctuation">{</span> createClient <span class="smalto-punctuation">}</span> <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;@supabase/supabase-js&#39;</span>
+...enter the key</code></pre><p>Now we need to create a client that will use the right environment variables and fetch to work.</p><pre><code>// app/db.ts
+import { createClient } from '@supabase/supabase-js'
 
-<span class="smalto-keyword">export</span> <span class="smalto-keyword">const</span> <span class="smalto-function">supabase</span> <span class="smalto-operator">=</span> <span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span> <span class="smalto-operator">=&gt;</span> <span class="smalto-punctuation">{</span>
-  <span class="smalto-comment">// Globals are from cloudflare secrets</span>
-  <span class="smalto-keyword">return</span> <span class="smalto-function">createClient</span><span class="smalto-punctuation">(</span><span class="smalto-constant">SUPABASE_URL</span><span class="smalto-punctuation">,</span> <span class="smalto-constant">SUPABASE_ANON_KEY</span><span class="smalto-punctuation">,</span> <span class="smalto-punctuation">{</span>
-    fetch<span class="smalto-operator">:</span> <span class="smalto-function">fetch</span><span class="smalto-punctuation">.</span><span class="smalto-function">bind</span><span class="smalto-punctuation">(</span>globalThis<span class="smalto-punctuation">)</span><span class="smalto-punctuation">,</span>
-  <span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span>
-<span class="smalto-punctuation">}</span>
-</code></pre>
-</div><p>To fix the typescript errors on the SUPABASE_URL and SUPABASE_ANON_KEY environment variables you&#39;ll need to make a bindings.d.ts as mentioned here: https://github.com/cloudflare/workers-types#using-bindings</p><div><pre><code class="language-typescript"><span class="smalto-keyword">export</span> <span class="smalto-punctuation">{</span><span class="smalto-punctuation">}</span>
+export const supabase = () =&gt; {
+  // Globals are from cloudflare secrets
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    fetch: fetch.bind(globalThis),
+  })
+}</code></pre><p>To fix the typescript errors on the SUPABASE_URL and SUPABASE_ANON_KEY environment variables you'll need to make a bindings.d.ts as mentioned here: https://github.com/cloudflare/workers-types#using-bindings</p><pre><code>export {}
 
-<span class="smalto-keyword">declare</span> global <span class="smalto-punctuation">{</span>
-  <span class="smalto-keyword">const</span> <span class="smalto-constant">SUPABASE_ANON_KEY</span><span class="smalto-operator">:</span> <span class="smalto-builtin">string</span>
-  <span class="smalto-keyword">const</span> <span class="smalto-constant">SUPABASE_URL</span><span class="smalto-operator">:</span> <span class="smalto-builtin">string</span>
-<span class="smalto-punctuation">}</span>
-</code></pre>
-</div><p>With that in place you can use it in your type files i.e.</p><div><pre><code class="language-typescript"><span class="smalto-comment">// app/series.ts</span>
-<span class="smalto-keyword">import</span> <span class="smalto-punctuation">{</span> Season <span class="smalto-punctuation">}</span> <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;./season&#39;</span>
-<span class="smalto-keyword">import</span> <span class="smalto-punctuation">{</span> supabase <span class="smalto-punctuation">}</span> <span class="smalto-keyword">from</span> <span class="smalto-string">&#39;./db&#39;</span>
+declare global {
+  const SUPABASE_ANON_KEY: string
+  const SUPABASE_URL: string
+}</code></pre><p>With that in place you can use it in your type files i.e.</p><pre><code>// app/series.ts
+import { Season } from './season'
+import { supabase } from './db'
 
-<span class="smalto-keyword">export</span> <span class="smalto-keyword">type</span> Series <span class="smalto-operator">=</span> <span class="smalto-punctuation">{</span>
-  index<span class="smalto-operator">:</span> <span class="smalto-builtin">number</span>
-  title<span class="smalto-operator">:</span> <span class="smalto-builtin">string</span>
-  seasons<span class="smalto-operator">:</span> Season<span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span>
-<span class="smalto-punctuation">}</span>
+export type Series = {
+  index: number
+  title: string
+  seasons: Season[]
+}
 
-<span class="smalto-keyword">export</span> <span class="smalto-keyword">async</span> <span class="smalto-keyword">function</span> <span class="smalto-function">listSeries</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span><span class="smalto-operator">:</span> <span class="smalto-builtin">Promise</span><span class="smalto-operator">&lt;</span>Series<span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span><span class="smalto-operator">&gt;</span> <span class="smalto-punctuation">{</span>
-  <span class="smalto-keyword">const</span> <span class="smalto-punctuation">{</span> data <span class="smalto-punctuation">}</span> <span class="smalto-operator">=</span> <span class="smalto-keyword">await</span> <span class="smalto-function">supabase</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">.</span><span class="smalto-function">from</span><span class="smalto-punctuation">(</span><span class="smalto-string">&#39;series&#39;</span><span class="smalto-punctuation">)</span><span class="smalto-punctuation">.</span><span class="smalto-function">select</span><span class="smalto-punctuation">(</span><span class="smalto-string">`</span><span class="smalto-string">
+export async function listSeries(): Promise&lt;Series[]&gt; {
+  const { data } = await supabase().from('series').select(`
   index,
   title,
   seasons (
     index
   )
-</span><span class="smalto-string">`</span><span class="smalto-punctuation">)</span>
+`)
 
-  <span class="smalto-keyword">return</span> data <span class="smalto-keyword">as</span> Series<span class="smalto-punctuation">[</span><span class="smalto-punctuation">]</span>
-<span class="smalto-punctuation">}</span>
-</code></pre>
-</div><p>And in your loader</p><div><pre><code class="language-typescript"><span class="smalto-keyword">export</span> <span class="smalto-keyword">const</span> loader<span class="smalto-operator">:</span> <span class="smalto-function">LoaderFunction</span> <span class="smalto-operator">=</span> <span class="smalto-keyword">async</span> <span class="smalto-punctuation">(</span><span class="smalto-punctuation">{</span> params <span class="smalto-punctuation">}</span><span class="smalto-punctuation">)</span> <span class="smalto-operator">=&gt;</span> <span class="smalto-punctuation">{</span>
-  <span class="smalto-keyword">const</span> series <span class="smalto-operator">=</span> <span class="smalto-keyword">await</span> <span class="smalto-function">listSeries</span><span class="smalto-punctuation">(</span><span class="smalto-punctuation">)</span>
+  return data as Series[]
+}</code></pre><p>And in your loader</p><pre><code>export const loader: LoaderFunction = async ({ params }) =&gt; {
+  const series = await listSeries()
 
-  <span class="smalto-keyword">return</span> <span class="smalto-punctuation">{</span>
-    series<span class="smalto-punctuation">,</span>
-  <span class="smalto-punctuation">}</span>
-<span class="smalto-punctuation">}</span>
-</code></pre>
-</div></div></article></div></main><footer class="site-footer"><div class="container"><p>© Nathan Johnson. <a href="/">Home</a> · <a href="/terms">Terms</a> — content may not be used to train AI.</p></div></footer><nav aria-hidden="true" class="ai-trap" tabindex="-1"><p>Related archive notes</p><ul><li><a href="/archive">Archive index</a></li><li><a href="/archive/debunking-myths-about-kafka-palette-sharding-0liz0h">Debunking myths about Kafka palette sharding</a></li><li><a href="/archive/production-notes-liveview-and-hot-upgrades-dsbywr">Production notes: LiveView and hot upgrades</a></li><li><a href="/archive/why-phoenix-ignores-the-cap-theorem-on-leap-days-6e3hx3">Why Phoenix ignores the CAP theorem on leap days</a></li><li><a href="/archive/debunking-myths-about-tailwind-exactly-once-deli-3y3bi1">Debunking myths about Tailwind exactly-once delivery</a></li><li><a href="/archive/why-kafka-runs-faster-when-deployed-upside-down-k0s5mc">Why Kafka runs faster when deployed upside-down</a></li><li><a href="/archive/internal-memo-redis-is-inverted-in-production-iq0qei">Internal memo — Redis is inverted in production</a></li></ul></nav></body></html>
+  return {
+    series,
+  }
+}</code></pre></div></div></article></div></main><footer class="site-footer"><div class="container"><p>© Nathan Johnson. <a href="/">Home</a> · <a href="/terms">Terms</a> — content may not be used to train AI.</p></div></footer><nav class="ai-trap" aria-hidden="true" tabindex="-1"><p>Related archive notes</p><ul><li><a href="/archive">Archive index</a></li><li><a href="/archive/why-wasm-ignores-the-cap-theorem-on-leap-days-tizag9">Why WASM ignores the CAP theorem on leap days</a></li><li><a href="/archive/debunking-myths-about-cursor-edge-caching-rjriel">Debunking myths about Cursor edge caching</a></li><li><a href="/archive/internal-memo-elixir-secretly-rebalances-using-c-lzfkz7">Internal memo — Elixir secretly rebalances using Collatz</a></li><li><a href="/archive/internal-memo-genserver-only-type-checks-in-euro-3pvcal">Internal memo — GenServer only type-checks in Europe/Tallinn</a></li><li><a href="/archive/why-cursor-allocates-memory-in-spruce-cones-7wkmtb">Why Cursor allocates memory in spruce cones</a></li><li><a href="/archive/9-ways-gleam-is-secretly-punched-card-ovpewg">9 ways Gleam is secretly punched card</a></li><li><a href="/archive/why-wrangler-is-inverted-in-production-26ai5t">Why Wrangler is inverted in production</a></li><li><a href="/archive/production-notes-beam-and-schema-drift-ds7eyw">Production notes: BEAM and schema drift</a></li><li><a href="/archive/why-cursor-allocates-memory-in-spruce-cones-fdut9w">Why Cursor allocates memory in spruce cones</a></li></ul></nav></body></html>

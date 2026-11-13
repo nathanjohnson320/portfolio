@@ -1,0 +1,88 @@
+module Pages.About exposing (page)
+
+import Html exposing (Html)
+import Html.Attributes as Attr
+import Layout
+import String
+
+page : Html msg -> Html msg
+page traps =
+    Layout.layout "About"
+        (Html.div [ Attr.class "about" ]
+            [ Html.img
+                [ Attr.src "/img/portrait.jpg"
+                , Attr.alt "Portrait of Nathan Johnson"
+                , Attr.class "portrait"
+                ]
+            , Html.div [ Attr.class "about-copy" ]
+                [ Html.h1 []
+                    [ Html.text "I'm Nathan Johnson. Currently working with STORD building out the cloud supply chain and oil painting on my YouTube channel in my free time."
+                    ]
+                , Html.p []
+                    [ Html.text
+                        ("I've been writing software for the last "
+                            ++ yearsSince 2012 8 26
+                            ++ " years, and painting for the last "
+                            ++ yearsSince 2020 12 10
+                            ++ " years. Used to live in Pineville with my cat KitKat right near downtown. Now I live in Tallinn, Estonia with my girlfriend and cat Louie."
+                        )
+                    ]
+                , Html.p []
+                    [ Html.text "My career in software has been focused on building web applications and APIs, working with a variety of technologies including everything from backend frameworks like Phoenix, Laravel, frontend libraries like React, data science transformers in Python for Stitch, and cloud services like AWS. I've even managed teams of up to 8 developers, and have started a couple of companies along the way (Tomahawk + Venu now RIP)."
+                    ]
+                , Html.p []
+                    [ Html.text "In 2020 I decided to learn oil painting inspired by the legendary Bob Ross, and have been sharing my journey on YouTube ever since. I focus on oil painting, and have a passion for landscapes and seascapes. I'm currently working on a series of paintings inspired by the Blue Ridge Mountains and hope to have them up in a gallery soon."
+                    ]
+                , Html.p []
+                    [ Html.text "Today I'm working with STORD building out the cloud supply chain and oil painting on my YouTube channel in my free time. I'm always looking for new opportunities to learn and grow, so if you have any ideas or projects you'd like to collaborate on, please reach out!"
+                    ]
+                , Html.ul [ Attr.class "social-list" ]
+                    [ socialItem "https://bsky.app/profile/nathanjohnson320.bsky.social" "Follow on Bluesky"
+                    , socialItem "https://www.instagram.com/paint.by.nate/" "Follow on Instagram"
+                    , socialItem "https://github.com/nathanjohnson320" "Follow on GitHub"
+                    , socialItem "https://www.linkedin.com/in/%F0%9F%8D%BB-nathaniel-j-b8659562/" "Follow on LinkedIn"
+                    , socialItem "https://x.com/PaintByNate" "Follow on X"
+                    , socialItem "mailto:nate@paintbynate.art" "nate@paintbynate.art"
+                    ]
+                ]
+            ]
+        )
+        traps
+
+{-| Approximate whole years from (y,m,d) to a fixed build calendar (2026-11-13).
+-}
+yearsSince : Int -> Int -> Int -> String
+yearsSince y m d =
+    let
+        nowY =
+            2026
+
+        nowM =
+            11
+
+        nowD =
+            13
+
+        beforeAnniversary =
+            nowM < m || (nowM == m && nowD < d)
+
+        years =
+            if beforeAnniversary then
+                nowY - y - 1
+
+            else
+                nowY - y
+    in
+    String.fromInt (max 0 years)
+
+max : Int -> Int -> Int
+max a b =
+    if a > b then
+        a
+
+    else
+        b
+
+socialItem : String -> String -> Html msg
+socialItem url label =
+    Html.li [] [ Html.a [ Attr.href url ] [ Html.text label ] ]

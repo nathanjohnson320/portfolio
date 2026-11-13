@@ -1,0 +1,264 @@
+module CLI.GenerateArticles exposing (run)
+
+{-| Read `content/articles/*.md` and `static/styles.css`, write:
+
+  - `src/Generated/Articles.selm`
+  - `src/Generated/Styles.selm`
+
+    selm generate_articles
+-}
+
+import Bytes
+import Bytes.Decode as Decode
+import Bytes.Encode as Encode
+import Debug
+import File
+import List
+import Markdown
+import Platform
+import Platform.Cmd as Cmd exposing (Cmd)
+import Platform.Sub as Sub exposing (Sub)
+import String
+import Task
+
+run : List String -> Platform.Program () Model Msg
+run _ =
+    Platform.worker
+        { init = \_ -> init
+        , update = update
+        , subscriptions = \_ -> Sub.none
+        }
+
+type alias Model =
+    {}
+
+type Msg
+    = Finished (Result String String)
+
+init : ( Model, Cmd Msg )
+init =
+    ( {}, Task.attempt Finished generate )
+
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Finished (Ok message) ->
+            let
+                _ =
+                    Debug.inspect "generate_articles" message
+            in
+            ( model, Platform.exit 0 )
+
+        Finished (Err err) ->
+            let
+                _ =
+                    Debug.inspect "generate_articles" err
+            in
+            ( model, Platform.exit 1 )
+
+generate : Task.Task String String
+generate =
+    File.list articlesDir
+        |> Task.mapError File.errorToString
+        |> Task.andThen
+            (\names ->
+                let
+                    mdNames =
+                        List.filter (\n -> String.endsWith ".md" n) names
+                            |> List.sort
+                in
+                loadArticles mdNames []
+                    |> Task.andThen
+                        (\articles ->
+                            readUtf8 "static/styles.css"
+                                |> Task.andThen
+                                    (\css ->
+                                        let
+                                            sorted =
+                                                List.sortBy (\a -> a.date) articles
+                                                    |> List.reverse
+
+                                            articlesSrc =
+                                                renderArticlesModule sorted
+
+                                            stylesSrc =
+                                                renderStylesModule css
+                                        in
+                                        File.write articlesOut (Encode.encode (Encode.string articlesSrc))
+                                            |> Task.mapError File.errorToString
+                                            |> Task.andThen
+                                                (\_ ->
+                                                    File.write stylesOut (Encode.encode (Encode.string stylesSrc))
+                                                        |> Task.mapError File.errorToString
+                                                        |> Task.map
+                                                            (\_ ->
+                                                                "wrote "
+                                                                    ++ String.fromInt (List.length sorted)
+                                                                    ++ " articles + styles.css embed"
+                                                            )
+                                                )
+                                    )
+                        )
+            )
+
+type alias Parsed =
+    { id : String
+    , title : String
+    , description : String
+    , date : String
+    , body : String
+    }
+
+loadArticles : List String -> List Parsed -> Task.Task String (List Parsed)
+loadArticles names acc =
+    case names of
+        [] ->
+            Task.succeed (List.reverse acc)
+
+        name :: rest ->
+            let
+                path =
+                    articlesDir ++ "/" ++ name
+
+                id =
+                    String.dropRight 3 name
+            in
+            readUtf8 path
+                |> Task.andThen
+                    (\raw ->
+                        loadArticles rest (parseArticle id raw :: acc)
+                    )
+
+parseArticle : String -> String -> Parsed
+parseArticle id raw =
+    let
+        meta =
+            case Markdown.frontmatter raw of
+                Just fm ->
+                    fm
+
+                Nothing ->
+                    ""
+
+        title =
+            metaString "title" meta id
+
+        description =
+            metaString "description" meta ""
+
+        date =
+            metaString "date" meta ""
+    in
+    { id = id
+    , title = title
+    , description = description
+    , date = date
+    , body = Markdown.stripFrontmatter raw
+    }
+
+metaString : String -> String -> String -> String
+metaString key source fallback =
+    let
+        prefix =
+            key ++ " = \""
+    in
+    case
+        List.filterMap
+            (\line ->
+                let
+                    trimmed =
+                        String.trim line
+                in
+                if String.startsWith prefix trimmed && String.endsWith "\"" trimmed then
+                    Just
+                        (String.dropRight 1 (String.dropLeft (String.length prefix) trimmed))
+
+                else
+                    Nothing
+            )
+            (String.lines source)
+    of
+        value :: _ ->
+            value
+
+        [] ->
+            fallback
+
+readUtf8 : String -> Task.Task String String
+readUtf8 path =
+    File.read path
+        |> Task.mapError File.errorToString
+        |> Task.andThen
+            (\bytes ->
+                case Decode.decode (Decode.string (Bytes.width bytes)) bytes of
+                    Just text ->
+                        Task.succeed text
+
+                    Nothing ->
+                        Task.fail ("could not decode UTF-8: " ++ path)
+            )
+
+renderArticlesModule : List Parsed -> String
+renderArticlesModule articles =
+    String.join "\n"
+        [ "module Generated.Articles exposing (all)"
+        , ""
+        , "{-| Generated by `selm generate_articles`. Do not edit."
+        , "-}"
+        , ""
+        , "import ArticlesData exposing (Article)"
+        , ""
+        , "all : List Article"
+        , "all ="
+        , "    [ " ++ String.join "\n    , " (List.map renderArticle articles)
+        , "    ]"
+        , ""
+        ]
+
+renderArticle : Parsed -> String
+renderArticle a =
+    String.join "\n      "
+        [ "{ id = " ++ quote a.id
+        , ", title = " ++ quote a.title
+        , ", description = " ++ quote a.description
+        , ", date = " ++ quote a.date
+        , ", body = " ++ quote a.body
+        , "}"
+        ]
+
+renderStylesModule : String -> String
+renderStylesModule css =
+    String.join "\n"
+        [ "module Generated.Styles exposing (css)"
+        , ""
+        , "{-| Generated by `selm generate_articles`. Do not edit."
+        , "-}"
+        , ""
+        , "css : String"
+        , "css ="
+        , "    " ++ quote css
+        , ""
+        ]
+
+quote : String -> String
+quote s =
+    "\""
+        ++ (s
+                |> String.replace "\\" "\\\\"
+                |> String.replace "\"" "\\\""
+                |> String.replace "\n" "\\n"
+                |> String.replace "\r" ""
+           )
+        ++ "\""
+
+articlesDir : String
+articlesDir =
+    "content/articles"
+
+articlesOut : String
+articlesOut =
+    "src/Generated/Articles.selm"
+
+stylesOut : String
+stylesOut =
+    "src/Generated/Styles.selm"

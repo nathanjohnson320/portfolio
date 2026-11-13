@@ -1,0 +1,76 @@
+module Pages.Projects exposing (page)
+
+import Html exposing (Html)
+import Html.Attributes as Attr
+import Layout
+import List
+
+type alias Project =
+    { name : String
+    , description : String
+    , href : String
+    , label : String
+    , logo : String
+    }
+
+page : Html msg -> Html msg
+page traps =
+    let
+        projects =
+            [ { name = "GleamHub"
+              , description = "Github but written in Gleam, for all those times Github is down."
+              , href = "https://github.com/nathanjohnson320/gleamhub"
+              , label = "github.com"
+              , logo = "/img/logos/gleam-logo.png"
+              }
+            , { name = "AtomVM Gleam"
+              , description = "AtomVM implementation using the Gleam programming language, for use on the AtomVM virtual machine."
+              , href = "https://github.com/nathanjohnson320/atomvm_gleam"
+              , label = "github.com"
+              , logo = "/img/logos/gleam-logo.png"
+              }
+            , { name = "html-to-lustre"
+              , description = "Website that converts HTML to Lustre code for use in gleam+lustre apps."
+              , href = "https://html-to-lustre.pages.dev/"
+              , label = "html-to-lustre"
+              , logo = "/img/logos/elm-logo.png"
+              }
+            , { name = "clerk-elixir"
+              , description = "API SDK for the clerk.js authentication platform written in Elixir."
+              , href = "https://github.com/nathanjohnson320/clerk_elixir"
+              , label = "github.com"
+              , logo = "/img/logos/clerk-logo.png"
+              }
+            , { name = "agora"
+              , description = "Elixir package that implements the agora SDK's token signing for Access Keys"
+              , href = "https://github.com/nathanjohnson320/agora"
+              , label = "github.com"
+              , logo = "/img/logos/agora-logo.png"
+              }
+            , { name = "LivePlace"
+              , description = "It's the same as reddit's r/place but written in Elixir + Phoenix LiveView."
+              , href = "https://github.com/nathanjohnson320/live_place"
+              , label = "github.com"
+              , logo = "/img/logos/liveplace-logo.png"
+              }
+            ]
+    in
+    Layout.layout "Projects"
+        (Html.div []
+            [ Layout.pageHeading
+                "Public projects I've worked on over the years."
+                "I have undertaken numerous projects over the past decade, and the following are those of which I've gotten the most satisfaction out of. These projects are open-source, allowing for public access and contribution. Should any of these projects capture your interest, I encourage you to review the code and contribute any ideas for improvement."
+            , Html.ul [ Attr.class "project-grid" ] (List.map projectCard projects)
+            ]
+        )
+        traps
+
+projectCard : Project -> Html msg
+projectCard project =
+    Html.li [ Attr.class "project-card" ]
+        [ Html.img [ Attr.src project.logo, Attr.alt "", Attr.class "project-logo" ]
+        , Html.h2 [] [ Html.a [ Attr.href project.href ] [ Html.text project.name ] ]
+        , Html.p [] [ Html.text project.description ]
+        , Html.p [ Attr.class "project-link" ]
+            [ Html.span [] [ Html.text project.label ] ]
+        ]

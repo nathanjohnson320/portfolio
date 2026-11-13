@@ -1,0 +1,61 @@
+module Main exposing (main)
+
+{-| Live preview server for the portfolio.
+-}
+
+import Generated.Styles as Styles
+import Html exposing (Html)
+import Server exposing (Request, Response, Server)
+import Site
+import String
+
+main : Server
+main =
+    Server.serve handle
+
+handle : Request -> Response
+handle req =
+    case req.method of
+        "GET" ->
+            case normalize req.url of
+                "/styles.css" ->
+                    Server.string 200 [] "text/css; charset=utf-8" Styles.css
+
+                path ->
+                    case lookup path of
+                        Just view ->
+                            Server.html 200 [] view
+
+                        Nothing ->
+                            Server.empty 404 []
+
+        _ ->
+            Server.empty 404 []
+
+normalize : String -> String
+normalize url =
+    if String.endsWith "/" url && url /= "/" then
+        String.dropRight 1 url
+
+    else
+        url
+
+lookup : String -> Maybe (Html msg)
+lookup path =
+    findPage (Site.pathFromUrl path) Site.pages
+
+findPage :
+    String
+    -> List { path : String, body : () -> Html msg }
+    -> Maybe (Html msg)
+findPage file list =
+    case list of
+        [] ->
+            Nothing
+
+        page :: rest ->
+            if page.path == file then
+                Just (page.body ())
+
+            else
+                findPage file rest
