@@ -118,6 +118,13 @@ blocks lines acc =
             else if isAtxHeading trimmed then
                 blocks rest (headingHtml trimmed :: acc)
 
+            else if isQuote trimmed then
+                let
+                    taken =
+                        takeQuote lines []
+                in
+                blocks taken.rest (quoteHtml taken.lines :: acc)
+
             else if isUnorderedItem trimmed then
                 let
                     taken =
@@ -276,6 +283,7 @@ takeParagraph lines acc =
                     == fence
                     || String.startsWith fence trimmed
                     || isAtxHeading trimmed
+                    || isQuote trimmed
                     || isUnorderedItem trimmed
                     || isOrderedItem trimmed
             then
@@ -283,6 +291,39 @@ takeParagraph lines acc =
 
             else
                 takeParagraph rest (line :: acc)
+
+isQuote : String -> Bool
+isQuote trimmed =
+    String.startsWith ">" trimmed
+
+type alias QuoteTaken =
+    { lines : List String
+    , rest : List String
+    }
+
+{-| Consecutive `>` lines, with the marker stripped.
+-}
+takeQuote : List String -> List String -> QuoteTaken
+takeQuote lines acc =
+    case lines of
+        [] ->
+            { lines = List.reverse acc, rest = [] }
+
+        line :: rest ->
+            let
+                trimmed =
+                    String.trim line
+            in
+            if isQuote trimmed then
+                takeQuote rest (String.trim (String.dropLeft 1 trimmed) :: acc)
+
+            else
+                { lines = List.reverse acc, rest = lines }
+
+quoteHtml : List String -> Html msg
+quoteHtml quoteLines =
+    Html.blockquote []
+        (List.reverse (blocks quoteLines []))
 
 type alias ListTaken msg =
     { items : List (Html msg)
@@ -463,6 +504,9 @@ inlineHelp text acc =
                 CodeMark ->
                     takeInlineCode after baseAcc
 
+                BoldMark ->
+                    takeInlineBold after baseAcc
+
                 LinkMark ->
                     takeInlineLink after baseAcc
 
@@ -471,6 +515,7 @@ inlineHelp text acc =
 
 type MarkKind
     = CodeMark
+    | BoldMark
     | LinkMark
     | ImageMark
 
@@ -490,15 +535,19 @@ nextMark text =
 
         linkAt =
             List.head (String.indexes "[" text)
-    in
-    pickMark tickAt imageAt linkAt
 
-pickMark : Maybe Int -> Maybe Int -> Maybe Int -> Maybe Mark
-pickMark tickAt imageAt linkAt =
+        boldAt =
+            List.head (String.indexes "**" text)
+    in
+    pickMark tickAt imageAt linkAt boldAt
+
+pickMark : Maybe Int -> Maybe Int -> Maybe Int -> Maybe Int -> Maybe Mark
+pickMark tickAt imageAt linkAt boldAt =
     let
         candidates =
             List.filterMap (\x -> x)
                 [ Maybe.map (\t -> { kind = CodeMark, at = t }) tickAt
+                , Maybe.map (\b -> { kind = BoldMark, at = b }) boldAt
                 , Maybe.map (\i -> { kind = ImageMark, at = i }) imageAt
                 , Maybe.map (\l -> { kind = LinkMark, at = l }) linkAt
                 ]
@@ -529,6 +578,26 @@ takeInlineCode afterOpen acc =
                     String.dropLeft (end + 1) body
             in
             inlineHelp rest (Html.code [] [ Html.text codeText ] :: acc)
+
+takeInlineBold : String -> List (Html msg) -> List (Html msg)
+takeInlineBold afterOpen acc =
+    let
+        body =
+            String.dropLeft 2 afterOpen
+    in
+    case List.head (String.indexes "**" body) of
+        Nothing ->
+            Html.text ("**" ++ body) :: acc
+
+        Just end ->
+            let
+                boldText =
+                    String.left end body
+
+                rest =
+                    String.dropLeft (end + 2) body
+            in
+            inlineHelp rest (Html.strong [] (inline boldText) :: acc)
 
 takeInlineLink : String -> List (Html msg) -> List (Html msg)
 takeInlineLink afterOpen acc =
