@@ -1,8 +1,8 @@
 module Markdown exposing (frontmatter, stripFrontmatter, toHtml)
 
 {-| Minimal markdown for portfolio articles: frontmatter strip, ATX headings,
-paragraphs, fenced code, lists (code fences nest under the preceding item),
-images, inline code and links.
+paragraphs, block quotes, fenced code, lists (code fences nest under the
+preceding item), images, inline code, links, bold, italic and strikethrough.
 -}
 
 import Char
@@ -507,6 +507,15 @@ inlineHelp text acc =
                 BoldMark ->
                     takeInlineBold after baseAcc
 
+                StrikeMark ->
+                    takeInlineStrike after baseAcc
+
+                StarMark ->
+                    takeInlineItalic "*" after baseAcc
+
+                UnderMark ->
+                    takeInlineItalic "_" after baseAcc
+
                 LinkMark ->
                     takeInlineLink after baseAcc
 
@@ -516,6 +525,9 @@ inlineHelp text acc =
 type MarkKind
     = CodeMark
     | BoldMark
+    | StrikeMark
+    | StarMark
+    | UnderMark
     | LinkMark
     | ImageMark
 
@@ -538,19 +550,31 @@ nextMark text =
 
         boldAt =
             List.head (String.indexes "**" text)
-    in
-    pickMark tickAt imageAt linkAt boldAt
 
-pickMark : Maybe Int -> Maybe Int -> Maybe Int -> Maybe Int -> Maybe Mark
-pickMark tickAt imageAt linkAt boldAt =
+        strikeAt =
+            List.head (String.indexes "~~" text)
+
+        starAt =
+            nextItalic "*" text
+
+        underAt =
+            nextItalic "_" text
+    in
+    pickMark
+        [ Maybe.map (\t -> { kind = CodeMark, at = t }) tickAt
+        , Maybe.map (\b -> { kind = BoldMark, at = b }) boldAt
+        , Maybe.map (\s -> { kind = StrikeMark, at = s }) strikeAt
+        , Maybe.map (\s -> { kind = StarMark, at = s }) starAt
+        , Maybe.map (\u -> { kind = UnderMark, at = u }) underAt
+        , Maybe.map (\i -> { kind = ImageMark, at = i }) imageAt
+        , Maybe.map (\l -> { kind = LinkMark, at = l }) linkAt
+        ]
+
+pickMark : List (Maybe Mark) -> Maybe Mark
+pickMark maybeMarks =
     let
         candidates =
-            List.filterMap (\x -> x)
-                [ Maybe.map (\t -> { kind = CodeMark, at = t }) tickAt
-                , Maybe.map (\b -> { kind = BoldMark, at = b }) boldAt
-                , Maybe.map (\i -> { kind = ImageMark, at = i }) imageAt
-                , Maybe.map (\l -> { kind = LinkMark, at = l }) linkAt
-                ]
+            List.filterMap (\x -> x) maybeMarks
     in
     case List.sortBy .at candidates of
         first :: _ ->
@@ -581,23 +605,116 @@ takeInlineCode afterOpen acc =
 
 takeInlineBold : String -> List (Html msg) -> List (Html msg)
 takeInlineBold afterOpen acc =
+    takeInlineWrapped "**" (\kids -> Html.strong [] kids) afterOpen acc
+
+takeInlineStrike : String -> List (Html msg) -> List (Html msg)
+takeInlineStrike afterOpen acc =
+    takeInlineWrapped "~~" (\kids -> Html.del [] kids) afterOpen acc
+
+{-| Delimited span (`**bold**`, `~~strike~~`). An unclosed delimiter stays literal.
+-}
+takeInlineWrapped :
+    String
+    -> (List (Html msg) -> Html msg)
+    -> String
+    -> List (Html msg)
+    -> List (Html msg)
+takeInlineWrapped delim wrap afterOpen acc =
     let
         body =
-            String.dropLeft 2 afterOpen
+            String.dropLeft (String.length delim) afterOpen
     in
-    case List.head (String.indexes "**" body) of
+    case List.head (String.indexes delim body) of
         Nothing ->
-            Html.text ("**" ++ body) :: acc
+            inlineHelp body (Html.text delim :: acc)
 
         Just end ->
             let
-                boldText =
+                inner =
                     String.left end body
 
                 rest =
-                    String.dropLeft (end + 2) body
+                    String.dropLeft (end + String.length delim) body
             in
-            inlineHelp rest (Html.strong [] (inline boldText) :: acc)
+            inlineHelp rest (wrap (inline inner) :: acc)
+
+takeInlineItalic : String -> String -> List (Html msg) -> List (Html msg)
+takeInlineItalic delim afterOpen acc =
+    let
+        body =
+            String.dropLeft 1 afterOpen
+    in
+    case List.head (List.filter (validClose delim body) (String.indexes delim body)) of
+        Nothing ->
+            inlineHelp body (Html.text delim :: acc)
+
+        Just end ->
+            inlineHelp (String.dropLeft (end + 1) body)
+                (Html.em [] (inline (String.left end body)) :: acc)
+
+nextItalic : String -> String -> Maybe Int
+nextItalic delim text =
+    List.head (List.filter (validOpen delim text) (String.indexes delim text))
+
+charAt : Int -> String -> String
+charAt i text =
+    if i < 0 then
+        ""
+
+    else
+        String.left 1 (String.dropLeft i text)
+
+isBlank : String -> Bool
+isBlank c =
+    String.trim c == ""
+
+isWordChar : String -> Bool
+isWordChar c =
+    case String.toList c of
+        ch :: _ ->
+            Char.isAlphaNum ch
+
+        [] ->
+            False
+
+{-| Opening `*` / `_`: followed by non-space; `_` must not sit inside a word
+(so `snake_case` is left alone).
+-}
+validOpen : String -> String -> Int -> Bool
+validOpen delim text i =
+    let
+        prev =
+            charAt (i - 1) text
+
+        next =
+            charAt (i + 1) text
+    in
+    not (isBlank next)
+        && next
+        /= delim
+        && prev
+        /= delim
+        && (delim == "*" || not (isWordChar prev))
+
+{-| Closing `*` / `_`: preceded by non-space; `_` must end a word.
+-}
+validClose : String -> String -> Int -> Bool
+validClose delim body j =
+    let
+        prev =
+            charAt (j - 1) body
+
+        next =
+            charAt (j + 1) body
+    in
+    j
+        > 0
+        && not (isBlank prev)
+        && prev
+        /= delim
+        && next
+        /= delim
+        && (delim == "*" || not (isWordChar next))
 
 takeInlineLink : String -> List (Html msg) -> List (Html msg)
 takeInlineLink afterOpen acc =
